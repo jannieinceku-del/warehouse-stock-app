@@ -904,6 +904,12 @@ document.getElementById('btn-detail-edit').addEventListener('click',()=>openEdit
 async function startScanner(){
   stopScanner();
   try {
+    // Step 1: explicitly request camera permission first
+    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } } });
+    // Permission granted — stop this stream, ZXing will open its own
+    stream.getTracks().forEach(t => t.stop());
+
+    // Step 2: get device list now that permission is granted
     const devices = await ZXingBrowser.BrowserMultiFormatReader.listVideoInputDevices();
     const back = devices.find(d=>d.label.toLowerCase().includes('back'))||devices[devices.length-1];
     scanner = new ZXingBrowser.BrowserMultiFormatReader();
@@ -916,7 +922,10 @@ async function startScanner(){
       }
     });
   } catch(e){
-    document.getElementById('viewfinder-wrap').innerHTML='<div style="padding:20px;text-align:center;color:var(--text2);font-size:0.85rem">Camera not available.<br>Use manual entry below.</div>';
+    let msg = 'Camera not available.<br>Use manual entry below.';
+    if(e.name === 'NotAllowedError') msg = 'Camera permission denied.<br>Please allow camera access and try again.';
+    if(e.name === 'NotFoundError') msg = 'No camera found on this device.';
+    document.getElementById('viewfinder-wrap').innerHTML=`<div style="padding:20px;text-align:center;color:var(--text2);font-size:0.85rem">${msg}</div>`;
   }
 }
 

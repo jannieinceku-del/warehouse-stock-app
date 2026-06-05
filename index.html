@@ -1,31 +1,9 @@
 <!--
 =============================================================
-  WAREHOUSE STOCK MANAGEMENT APP
-  Setup Instructions — Read before uploading
+  INCEKU METER STOCK MANAGEMENT APP
 =============================================================
-
-STEP 1 — Replace the two config values below:
-  GOOGLE_CLIENT_ID  → Your OAuth 2.0 Client ID from:
-                      Google Cloud Console → APIs & Services → Credentials
-                      Looks like: 123456789-abcdefgh.apps.googleusercontent.com
-
-  SPREADSHEET_ID    → Your Google Spreadsheet ID from the URL:
-                      https://docs.google.com/spreadsheets/d/YOUR_ID_HERE/edit
-
-STEP 2 — Host this file on HTTPS (required for camera + Google OAuth)
-  Easiest: GitHub Pages
-  - Create a repo, upload this file as index.html
-  - Settings → Pages → Deploy from main branch
-  - Your URL: https://YOURUSERNAME.github.io/REPONAME
-
-STEP 3 — Add your hosted URL to Google Cloud Console
-  APIs & Services → Credentials → Your OAuth Client → Authorised JavaScript Origins
-  Add: https://YOURUSERNAME.github.io
-
-STEP 4 — Add users in Google Cloud Console
-  APIs & Services → OAuth consent screen → Test Users → Add Users
-  Add every Google email that will use the app
-
+  Already configured with your Client ID and Spreadsheet ID.
+  Hosted at: https://jannieinceku-del.github.io/warehouse-stock-app
 =============================================================
 -->
 <!DOCTYPE html>
@@ -34,315 +12,177 @@ STEP 4 — Add users in Google Cloud Console
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#1a2332">
-<title>Warehouse Stock</title>
+<meta name="theme-color" content="#0f1923">
+<title>Inceku Meter Stock</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script src="https://apis.google.com/js/api.js"></script>
 <script src="https://unpkg.com/@zxing/browser@latest/umd/index.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <style>
 :root {
-  --bg: #0f1923;
-  --bg2: #1a2332;
-  --bg3: #243044;
-  --border: #2e3d52;
-  --text: #e8edf3;
-  --text2: #8fa3bc;
-  --text3: #566a82;
-  --blue: #3b82f6;
-  --blue2: #1d4ed8;
-  --green: #22c55e;
-  --amber: #f59e0b;
-  --red: #ef4444;
-  --radius: 12px;
-  --radius-sm: 8px;
-  --mono: 'DM Mono', monospace;
-  --sans: 'DM Sans', sans-serif;
+  --bg: #0f1923; --bg2: #1a2332; --bg3: #243044; --border: #2e3d52;
+  --text: #e8edf3; --text2: #8fa3bc; --text3: #566a82;
+  --blue: #3D7DC4; --blue2: #2f6aad; --blue-glow: rgba(61,125,196,0.5);
+  --green: #22c55e; --amber: #f59e0b; --red: #ef4444;
+  --radius: 12px; --radius-sm: 8px;
+  --mono: 'DM Mono', monospace; --sans: 'DM Sans', sans-serif;
 }
 * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
 html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 16px; }
 
-/* AUTH SCREEN */
-#auth-screen {
-  display: flex; flex-direction: column; align-items: center; justify-content: center;
-  height: 100vh; padding: 2rem; gap: 2rem; background: var(--bg);
-}
-.auth-logo { font-family: var(--mono); font-size: 1.1rem; color: var(--blue); letter-spacing: 0.15em; text-transform: uppercase; }
-.auth-title { font-size: 1.8rem; font-weight: 600; text-align: center; line-height: 1.2; }
-.auth-sub { color: var(--text2); text-align: center; font-size: 0.95rem; line-height: 1.6; }
-.btn-google {
-  display: flex; align-items: center; gap: 12px; padding: 14px 24px;
-  background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius);
-  color: var(--text); font-family: var(--sans); font-size: 1rem; font-weight: 500;
-  cursor: pointer; transition: background 0.15s; width: 100%; max-width: 320px; justify-content: center;
-}
-.btn-google:hover { background: var(--border); }
+#auth-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; padding: 2rem; gap: 1.5rem; background: var(--bg); }
+.auth-logo-img { width: 110px; height: 110px; }
+.auth-title { font-size: 1.6rem; font-weight: 700; text-align: center; line-height: 1.2; }
+.auth-sub { color: var(--text2); text-align: center; font-size: 0.95rem; line-height: 1.6; max-width: 320px; }
+.btn-google { display: flex; align-items: center; gap: 12px; padding: 14px 24px; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); font-family: var(--sans); font-size: 1rem; font-weight: 500; cursor: pointer; width: 100%; max-width: 320px; justify-content: center; }
 .btn-google svg { width: 20px; height: 20px; flex-shrink: 0; }
 
-/* APP SHELL */
 #app { display: none; flex-direction: column; height: 100vh; }
 #app.active { display: flex; }
+.app-header { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; background: var(--bg2); border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.app-header-brand { display: flex; align-items: center; gap: 8px; }
+.app-header-brand img { width: 30px; height: 30px; }
+.app-header-title { font-family: var(--sans); font-size: 0.95rem; font-weight: 700; letter-spacing: 0.02em; }
+.app-header-title span { color: var(--blue); }
+.app-header-user { font-size: 0.78rem; color: var(--text2); display: flex; align-items: center; gap: 8px; }
+.btn-signout { background: none; border: 1px solid var(--border); color: var(--text2); font-size: 0.72rem; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-family: var(--sans); }
 
-/* HEADER */
-.app-header {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 12px 16px; background: var(--bg2); border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
-}
-.app-header-title { font-family: var(--mono); font-size: 0.85rem; color: var(--blue); letter-spacing: 0.1em; text-transform: uppercase; }
-.app-header-user { font-size: 0.8rem; color: var(--text2); display: flex; align-items: center; gap: 8px; }
-.btn-signout { background: none; border: 1px solid var(--border); color: var(--text2); font-size: 0.75rem; padding: 4px 10px; border-radius: 6px; cursor: pointer; font-family: var(--sans); }
-
-/* MAIN CONTENT */
 .app-content { flex: 1; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; padding-bottom: 80px; }
-
-/* BOTTOM NAV */
-.bottom-nav {
-  display: flex; background: var(--bg2); border-top: 1px solid var(--border);
-  flex-shrink: 0; position: fixed; bottom: 0; left: 0; right: 0; z-index: 100;
-}
-.nav-item {
-  flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center;
-  padding: 10px 4px; gap: 4px; background: none; border: none; color: var(--text3);
-  font-family: var(--sans); font-size: 0.65rem; cursor: pointer; transition: color 0.15s;
-  text-transform: uppercase; letter-spacing: 0.05em;
-}
+.bottom-nav { display: flex; background: var(--bg2); border-top: 1px solid var(--border); flex-shrink: 0; position: fixed; bottom: 0; left: 0; right: 0; z-index: 100; }
+.nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px 4px; gap: 4px; background: none; border: none; color: var(--text3); font-family: var(--sans); font-size: 0.62rem; cursor: pointer; text-transform: uppercase; letter-spacing: 0.04em; }
 .nav-item.active { color: var(--blue); }
-.nav-icon { font-size: 1.4rem; line-height: 1; }
+.nav-icon { font-size: 1.35rem; line-height: 1; }
 
-/* SCREENS */
 .screen { display: none; }
 .screen.active { display: block; }
+.section-header { padding: 18px 16px 12px; }
+.section-title { font-size: 1.2rem; font-weight: 700; }
+.section-sub { font-size: 0.82rem; color: var(--text2); margin-top: 4px; }
 
-/* SECTION HEADER */
-.section-header { padding: 20px 16px 12px; }
-.section-title { font-size: 1.2rem; font-weight: 600; }
-.section-sub { font-size: 0.85rem; color: var(--text2); margin-top: 4px; }
-
-/* SUMMARY TILES */
 .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 0 16px 16px; }
-.summary-tile {
-  background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius);
-  padding: 14px; display: flex; flex-direction: column; gap: 4px;
-}
-.tile-label { font-size: 0.7rem; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; }
-.tile-value { font-family: var(--mono); font-size: 1.15rem; font-weight: 500; color: var(--text); }
-.tile-value.green { color: var(--green); }
-.tile-value.amber { color: var(--amber); }
-.tile-value.red { color: var(--red); }
+.summary-tile { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; display: flex; flex-direction: column; gap: 4px; }
+.tile-label { font-size: 0.68rem; color: var(--text3); text-transform: uppercase; letter-spacing: 0.07em; }
+.tile-value { font-family: var(--mono); font-size: 1.15rem; font-weight: 500; }
+.tile-value.green { color: var(--green); } .tile-value.amber { color: var(--amber); } .tile-value.blue { color: var(--blue); }
 
-/* SEARCH BAR */
 .search-wrap { padding: 0 16px 12px; }
-.search-input {
-  width: 100%; background: var(--bg2); border: 1px solid var(--border);
-  border-radius: var(--radius-sm); padding: 10px 14px; color: var(--text);
-  font-family: var(--sans); font-size: 0.95rem; outline: none;
-}
+.search-input { width: 100%; background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 14px; color: var(--text); font-family: var(--sans); font-size: 0.95rem; outline: none; }
 .search-input:focus { border-color: var(--blue); }
 .search-input::placeholder { color: var(--text3); }
 
-/* PRODUCT CARDS */
-.product-list { padding: 0 16px; display: flex; flex-direction: column; gap: 10px; }
-.product-card {
-  background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius);
-  padding: 14px; cursor: pointer; transition: border-color 0.15s;
-}
-.product-card:active { border-color: var(--blue); }
-.product-card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
-.product-name { font-weight: 600; font-size: 1rem; }
-.product-code { font-family: var(--mono); font-size: 0.75rem; color: var(--text3); margin-top: 2px; }
-.stock-badge {
-  font-family: var(--mono); font-size: 0.85rem; font-weight: 500;
-  padding: 4px 10px; border-radius: 20px; white-space: nowrap;
-}
-.stock-badge.ok { background: rgba(34,197,94,0.15); color: var(--green); }
-.stock-badge.low { background: rgba(245,158,11,0.15); color: var(--amber); }
-.stock-badge.critical { background: rgba(239,68,68,0.15); color: var(--red); }
-.product-meta { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text2); }
-.product-values { display: flex; gap: 16px; margin-top: 8px; font-size: 0.8rem; }
+.cat-group { padding: 0 16px 8px; }
+.cat-header { display: flex; align-items: center; gap: 8px; padding: 12px 0 8px; font-size: 0.75rem; font-weight: 600; color: var(--blue); text-transform: uppercase; letter-spacing: 0.08em; }
+.cat-header .cat-icon { font-size: 1rem; }
+.type-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; margin-bottom: 10px; cursor: pointer; }
+.type-card:active { border-color: var(--blue); }
+.type-card-header { display: flex; justify-content: space-between; align-items: flex-start; }
+.type-name { font-weight: 600; font-size: 1rem; }
+.type-phase { font-size: 0.75rem; color: var(--text2); margin-top: 2px; }
+.type-count { font-family: var(--mono); font-size: 0.9rem; font-weight: 500; padding: 5px 12px; border-radius: 20px; white-space: nowrap; }
+.type-count.ok { background: rgba(34,197,94,0.15); color: var(--green); }
+.type-count.low { background: rgba(245,158,11,0.15); color: var(--amber); }
+.type-count.critical { background: rgba(239,68,68,0.15); color: var(--red); }
+.type-values { display: flex; gap: 16px; margin-top: 10px; font-size: 0.8rem; }
 .val-item { display: flex; flex-direction: column; gap: 2px; }
-.val-label { color: var(--text3); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.05em; }
+.val-label { color: var(--text3); font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.04em; }
 .val-num { font-family: var(--mono); font-weight: 500; }
 
-/* SCAN SCREEN */
 .scan-wrap { padding: 16px; }
-.viewfinder-wrap {
-  position: relative; background: #000; border-radius: var(--radius);
-  overflow: hidden; aspect-ratio: 4/3; margin-bottom: 16px;
-}
-#preview { width: 100%; height: 100%; object-fit: cover; display: block; }
-.scan-line {
-  position: absolute; left: 10%; right: 10%; height: 2px;
-  background: var(--blue); box-shadow: 0 0 8px var(--blue);
-  animation: scanline 2s ease-in-out infinite;
-}
-@keyframes scanline { 0%,100% { top: 15%; } 50% { top: 85%; } }
-.scan-overlay {
-  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
-  pointer-events: none;
-}
-.scan-frame {
-  width: 60%; aspect-ratio: 1; border: 2px solid rgba(59,130,246,0.6);
-  border-radius: 8px; box-shadow: 0 0 0 9999px rgba(0,0,0,0.45);
-}
-.scanned-result {
-  background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius);
-  padding: 12px 14px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between;
-}
-.scanned-code { font-family: var(--mono); font-size: 1rem; color: var(--blue); }
-.scanned-name { font-size: 0.8rem; color: var(--text2); margin-top: 2px; }
-
-/* FORMS */
-.form-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 14px; }
-.form-title { font-size: 1rem; font-weight: 600; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
-.form-group { margin-bottom: 14px; }
-.form-label { font-size: 0.75rem; color: var(--text2); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 6px; display: block; }
-.form-input, .form-select, .form-textarea {
-  width: 100%; background: var(--bg3); border: 1px solid var(--border);
-  border-radius: var(--radius-sm); padding: 11px 13px; color: var(--text);
-  font-family: var(--sans); font-size: 1rem; outline: none; appearance: none;
-}
-.form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--blue); }
-.form-input::placeholder, .form-textarea::placeholder { color: var(--text3); }
-.form-input[readonly] { color: var(--text2); cursor: default; }
-.form-textarea { resize: none; height: 80px; }
-.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.variance-display {
-  font-family: var(--mono); font-size: 1.2rem; font-weight: 500; text-align: center;
-  padding: 10px; border-radius: var(--radius-sm); background: var(--bg3);
-  border: 1px solid var(--border);
-}
-.variance-display.pos { color: var(--green); }
-.variance-display.neg { color: var(--red); }
-.variance-display.zero { color: var(--text2); }
-
-/* MOVEMENT TYPE SELECTOR */
 .movement-tabs { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 16px; }
-.mvt-tab {
-  padding: 10px 4px; border: 1px solid var(--border); border-radius: var(--radius-sm);
-  background: var(--bg2); color: var(--text2); font-size: 0.75rem; font-weight: 500;
-  text-align: center; cursor: pointer; transition: all 0.15s; font-family: var(--sans);
-  text-transform: uppercase; letter-spacing: 0.05em;
-}
+.mvt-tab { padding: 11px 4px; border: 1px solid var(--border); border-radius: var(--radius-sm); background: var(--bg2); color: var(--text2); font-size: 0.72rem; font-weight: 600; text-align: center; cursor: pointer; font-family: var(--sans); text-transform: uppercase; letter-spacing: 0.04em; }
 .mvt-tab.active.in { border-color: var(--green); color: var(--green); background: rgba(34,197,94,0.1); }
 .mvt-tab.active.out { border-color: var(--red); color: var(--red); background: rgba(239,68,68,0.1); }
-.mvt-tab.active.take { border-color: var(--blue); color: var(--blue); background: rgba(59,130,246,0.1); }
+.mvt-tab.active.take { border-color: var(--blue); color: var(--blue); background: rgba(61,125,196,0.12); }
 
-/* BUTTONS */
-.btn {
-  display: block; width: 100%; padding: 14px; border-radius: var(--radius);
-  font-family: var(--sans); font-size: 1rem; font-weight: 600; cursor: pointer;
-  border: none; transition: opacity 0.15s; text-align: center;
-}
-.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.viewfinder-wrap { position: relative; background: #000; border-radius: var(--radius); overflow: hidden; aspect-ratio: 4/3; margin-bottom: 12px; }
+#preview { width: 100%; height: 100%; object-fit: cover; display: block; }
+.scan-line { position: absolute; left: 10%; right: 10%; height: 2px; background: var(--blue); box-shadow: 0 0 8px var(--blue-glow); animation: scanline 2s ease-in-out infinite; }
+@keyframes scanline { 0%,100% { top: 15%; } 50% { top: 85%; } }
+.scan-overlay { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; pointer-events: none; }
+.scan-frame { width: 62%; aspect-ratio: 1; border: 2px solid var(--blue-glow); border-radius: 8px; box-shadow: 0 0 0 9999px rgba(0,0,0,0.45); }
+.btn-manual { margin-bottom: 14px; background: var(--bg3); color: var(--text2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 11px; width: 100%; font-family: var(--sans); font-size: 0.9rem; cursor: pointer; }
+.scanned-result { background: var(--bg3); border: 1px solid var(--blue); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; }
+.scanned-code { font-family: var(--mono); font-size: 1.05rem; color: var(--blue); }
+.scanned-name { font-size: 0.8rem; color: var(--text2); margin-top: 3px; }
+
+.form-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; margin-bottom: 14px; }
+.form-title { font-size: 1rem; font-weight: 700; margin-bottom: 14px; }
+.form-group { margin-bottom: 14px; }
+.form-label { font-size: 0.72rem; color: var(--text2); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; display: block; }
+.form-input, .form-select, .form-textarea { width: 100%; background: var(--bg3); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 11px 13px; color: var(--text); font-family: var(--sans); font-size: 1rem; outline: none; appearance: none; }
+.form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--blue); }
+.form-input[readonly] { color: var(--text2); }
+.form-textarea { resize: none; height: 70px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.form-select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238fa3bc' d='M2 4l4 4 4-4'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 13px center; padding-right: 34px; }
+
+.btn { display: block; width: 100%; padding: 14px; border-radius: var(--radius); font-family: var(--sans); font-size: 1rem; font-weight: 600; cursor: pointer; border: none; text-align: center; }
+.btn:disabled { opacity: 0.5; }
 .btn-primary { background: var(--blue); color: #fff; }
-.btn-primary:hover:not(:disabled) { background: var(--blue2); }
 .btn-secondary { background: var(--bg3); color: var(--text); border: 1px solid var(--border); }
 .btn-danger { background: var(--red); color: #fff; }
-.btn-sm {
-  display: inline-block; width: auto; padding: 8px 14px;
-  font-size: 0.85rem; border-radius: var(--radius-sm);
-}
-.btn-manual { margin-top: 8px; background: var(--bg3); color: var(--text2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px; width: 100%; font-family: var(--sans); font-size: 0.9rem; cursor: pointer; }
+.btn-sm { display: inline-block; width: auto; padding: 8px 14px; font-size: 0.85rem; border-radius: var(--radius-sm); }
 
-/* REPORTS */
 .report-tabs { display: flex; gap: 8px; padding: 0 16px 12px; overflow-x: auto; }
-.report-tab {
-  white-space: nowrap; padding: 8px 14px; border-radius: 20px; font-size: 0.8rem;
-  border: 1px solid var(--border); background: var(--bg2); color: var(--text2);
-  cursor: pointer; font-family: var(--sans); flex-shrink: 0; transition: all 0.15s;
-}
+.report-tab { white-space: nowrap; padding: 8px 14px; border-radius: 20px; font-size: 0.8rem; border: 1px solid var(--border); background: var(--bg2); color: var(--text2); cursor: pointer; font-family: var(--sans); flex-shrink: 0; }
 .report-tab.active { background: var(--blue); border-color: var(--blue); color: #fff; }
 .date-range-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 0 16px 12px; }
 .report-table-wrap { overflow-x: auto; padding: 0 16px; }
-.report-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; min-width: 600px; }
-.report-table th {
-  background: var(--bg3); color: var(--text2); text-align: left; padding: 8px 10px;
-  font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 500;
-  border-bottom: 1px solid var(--border); white-space: nowrap;
-}
-.report-table td { padding: 9px 10px; border-bottom: 1px solid var(--border); color: var(--text); vertical-align: middle; }
-.report-table tr:last-child td { border-bottom: none; }
+.report-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; min-width: 600px; }
+.report-table th { background: var(--bg3); color: var(--text2); text-align: left; padding: 8px 10px; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 500; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.report-table td { padding: 9px 10px; border-bottom: 1px solid var(--border); }
 .report-table .mono { font-family: var(--mono); }
-.report-table .totals-row td { background: var(--bg3); font-weight: 600; color: var(--text); }
+.report-table .totals-row td { background: var(--bg3); font-weight: 600; }
 .export-row { display: flex; gap: 8px; padding: 12px 16px; }
 
-/* DETAIL SCREEN */
 .detail-header { padding: 16px; border-bottom: 1px solid var(--border); }
-.back-btn { background: none; border: none; color: var(--blue); font-family: var(--sans); font-size: 0.9rem; cursor: pointer; padding: 0; margin-bottom: 12px; display: flex; align-items: center; gap: 4px; }
-.detail-name { font-size: 1.3rem; font-weight: 600; }
+.back-btn { background: none; border: none; color: var(--blue); font-family: var(--sans); font-size: 0.9rem; cursor: pointer; padding: 0; margin-bottom: 12px; }
+.detail-name { font-size: 1.3rem; font-weight: 700; }
 .detail-code { font-family: var(--mono); color: var(--text3); font-size: 0.85rem; margin-top: 4px; }
 .detail-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; padding: 14px 16px; }
 .detail-stat { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px; text-align: center; }
 .detail-stat-val { font-family: var(--mono); font-size: 1.1rem; font-weight: 500; }
-.detail-stat-lbl { font-size: 0.65rem; color: var(--text3); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 3px; }
-.ledger-entry { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: flex-start; }
-.ledger-type { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.07em; font-weight: 500; padding: 3px 8px; border-radius: 12px; }
-.ledger-type.in { background: rgba(34,197,94,0.15); color: var(--green); }
-.ledger-type.out { background: rgba(239,68,68,0.15); color: var(--red); }
-.ledger-type.take { background: rgba(59,130,246,0.15); color: var(--blue); }
-.ledger-date { font-size: 0.8rem; color: var(--text3); margin-top: 3px; }
-.ledger-user { font-size: 0.75rem; color: var(--text3); }
-.ledger-qty { font-family: var(--mono); font-weight: 500; text-align: right; }
-.ledger-balance { font-size: 0.75rem; color: var(--text2); text-align: right; margin-top: 2px; }
+.detail-stat-lbl { font-size: 0.63rem; color: var(--text3); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 3px; }
+.meter-row { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+.meter-num { font-family: var(--mono); font-size: 0.95rem; }
+.meter-status { font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.05em; font-weight: 500; padding: 3px 9px; border-radius: 12px; }
+.meter-status.instock { background: rgba(34,197,94,0.15); color: var(--green); }
+.meter-status.dispatched { background: rgba(239,68,68,0.15); color: var(--red); }
+.meter-sub { font-size: 0.74rem; color: var(--text3); margin-top: 3px; }
 
-/* SETTINGS */
 .settings-section { padding: 16px; border-bottom: 1px solid var(--border); }
-.settings-section-title { font-size: 0.75rem; color: var(--text3); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px; }
+.settings-section-title { font-size: 0.72rem; color: var(--text3); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 12px; }
 
-/* LOADING */
-.loader-overlay {
-  position: fixed; inset: 0; background: rgba(15,25,35,0.8);
-  display: flex; align-items: center; justify-content: center; z-index: 999;
-}
+.loader-overlay { position: fixed; inset: 0; background: rgba(15,25,35,0.8); display: flex; align-items: center; justify-content: center; z-index: 999; }
 .loader { width: 36px; height: 36px; border: 3px solid var(--border); border-top-color: var(--blue); border-radius: 50%; animation: spin 0.7s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
-
-/* TOAST */
-.toast {
-  position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
-  background: var(--bg3); border: 1px solid var(--border); color: var(--text);
-  padding: 10px 18px; border-radius: 20px; font-size: 0.85rem; z-index: 1000;
-  opacity: 0; transition: opacity 0.2s; white-space: nowrap; pointer-events: none;
-}
+.toast { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%); background: var(--bg3); border: 1px solid var(--border); color: var(--text); padding: 10px 18px; border-radius: 20px; font-size: 0.85rem; z-index: 1000; opacity: 0; transition: opacity 0.2s; pointer-events: none; max-width: 90%; text-align: center; }
 .toast.show { opacity: 1; }
 .toast.success { border-color: var(--green); color: var(--green); }
 .toast.error { border-color: var(--red); color: var(--red); }
-
-/* EMPTY STATE */
-.empty-state { padding: 48px 16px; text-align: center; color: var(--text3); font-size: 0.9rem; }
-
-/* MODAL */
-.modal-overlay {
-  position: fixed; inset: 0; background: rgba(0,0,0,0.7);
-  display: flex; align-items: flex-end; z-index: 200;
-}
-.modal-sheet {
-  background: var(--bg2); border-radius: var(--radius) var(--radius) 0 0;
-  width: 100%; max-height: 85vh; overflow-y: auto;
-  border-top: 1px solid var(--border); padding-bottom: 30px;
-}
+.empty-state { padding: 40px 16px; text-align: center; color: var(--text3); font-size: 0.9rem; }
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; align-items: flex-end; z-index: 200; }
+.modal-sheet { background: var(--bg2); border-radius: var(--radius) var(--radius) 0 0; width: 100%; max-height: 88vh; overflow-y: auto; border-top: 1px solid var(--border); padding-bottom: 30px; }
 .modal-header { padding: 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
-.modal-title { font-size: 1rem; font-weight: 600; }
-.modal-close { background: none; border: none; color: var(--text2); font-size: 1.5rem; cursor: pointer; line-height: 1; padding: 0; }
+.modal-title { font-size: 1rem; font-weight: 700; }
+.modal-close { background: none; border: none; color: var(--text2); font-size: 1.5rem; cursor: pointer; }
 .modal-body { padding: 16px; }
-
-/* ADD PRODUCT inline */
-#add-product-form { display: none; padding: 16px; }
-#add-product-form.active { display: block; }
+.pdf-success { background: rgba(34,197,94,0.1); border: 1px solid var(--green); border-radius: var(--radius); padding: 16px; margin-bottom: 14px; text-align: center; }
+.pdf-success-title { color: var(--green); font-weight: 600; margin-bottom: 10px; }
 </style>
 </head>
 <body>
 
-<!-- AUTH -->
 <div id="auth-screen">
-  <div class="auth-logo">⬡ WMS</div>
+  <img class="auth-logo-img" src="data:image/png;base64,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" alt="Inceku">
   <div>
-    <div class="auth-title">Warehouse Stock Manager</div>
-    <div class="auth-sub" style="margin-top:8px">Sign in with Google to access your live stock database</div>
+    <div class="auth-title">Inceku Meter Stock</div>
   </div>
+  <div class="auth-sub">Sign in with Google to access your live meter stock database</div>
   <button class="btn-google" id="btn-google-signin">
     <svg viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.34-8.16 2.34-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
     Sign in with Google
@@ -350,10 +190,45 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
   <div id="auth-error" style="color:var(--red);font-size:0.85rem;text-align:center;display:none;max-width:300px"></div>
 </div>
 
-<!-- APP -->
+<!-- LOGIN (email + password) -->
+<div id="login-screen" style="display:none">
+  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:2rem;gap:1.2rem">
+    <img class="auth-logo-img" src="__LOGO__" alt="Inceku" style="width:90px;height:90px">
+    <div class="auth-title" style="font-size:1.4rem">Sign In</div>
+    <div class="auth-sub">Enter your email and password to continue</div>
+    <div style="width:100%;max-width:340px">
+      <div class="form-group"><label class="form-label">Email</label><input type="email" class="form-input" id="login-email" placeholder="you@company.co.za" autocomplete="username"></div>
+      <div class="form-group"><label class="form-label">Password</label><input type="password" class="form-input" id="login-password" placeholder="Password" autocomplete="current-password"></div>
+      <button class="btn btn-primary" id="btn-login">Sign In</button>
+      <div id="login-error" style="color:var(--red);font-size:0.85rem;text-align:center;display:none;margin-top:12px"></div>
+    </div>
+  </div>
+</div>
+
+<!-- CREATE FIRST ACCOUNT -->
+<div id="create-screen" style="display:none">
+  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:2rem;gap:1rem">
+    <img class="auth-logo-img" src="__LOGO__" alt="Inceku" style="width:80px;height:80px">
+    <div class="auth-title" style="font-size:1.35rem" id="create-title">Create Admin Account</div>
+    <div class="auth-sub" id="create-sub">This is the first account. It will have admin rights to add other users.</div>
+    <div style="width:100%;max-width:340px">
+      <div class="form-group"><label class="form-label">Full Name *</label><input type="text" class="form-input" id="create-name" placeholder="Your name"></div>
+      <div class="form-group"><label class="form-label">Email *</label><input type="email" class="form-input" id="create-email" placeholder="you@company.co.za"></div>
+      <div class="form-group"><label class="form-label">Password * (min 6 chars)</label><input type="password" class="form-input" id="create-password" placeholder="Choose a password"></div>
+      <div class="form-group"><label class="form-label">Confirm Password *</label><input type="password" class="form-input" id="create-password2" placeholder="Re-enter password"></div>
+      <button class="btn btn-primary" id="btn-create">Create Account</button>
+      <button class="btn btn-secondary" id="btn-create-cancel" style="margin-top:8px;display:none">Cancel</button>
+      <div id="create-error" style="color:var(--red);font-size:0.85rem;text-align:center;display:none;margin-top:12px"></div>
+    </div>
+  </div>
+</div>
+
 <div id="app">
   <div class="app-header">
-    <div class="app-header-title">⬡ WMS</div>
+    <div class="app-header-brand">
+      <img src="data:image/png;base64,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" alt="">
+      <div class="app-header-title">INCEKU <span>METERS</span></div>
+    </div>
     <div class="app-header-user">
       <span id="header-username"></span>
       <button class="btn-signout" id="btn-signout">Sign out</button>
@@ -365,183 +240,149 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
     <!-- DASHBOARD -->
     <div id="screen-dashboard" class="screen active">
       <div class="section-header">
-        <div class="section-title">Stock Overview</div>
+        <div class="section-title">Meter Stock</div>
         <div class="section-sub" id="dash-updated"></div>
       </div>
       <div class="summary-grid">
-        <div class="summary-tile"><div class="tile-label">Products</div><div class="tile-value" id="tile-products">—</div></div>
-        <div class="summary-tile"><div class="tile-label">Low Stock</div><div class="tile-value amber" id="tile-low">—</div></div>
-        <div class="summary-tile"><div class="tile-label">Value (Cost)</div><div class="tile-value" id="tile-cost">—</div></div>
-        <div class="summary-tile"><div class="tile-label">Value (Sell)</div><div class="tile-value green" id="tile-sell">—</div></div>
+        <div class="summary-tile"><div class="tile-label">In Stock</div><div class="tile-value green" id="tile-instock">&mdash;</div></div>
+        <div class="summary-tile"><div class="tile-label">Dispatched</div><div class="tile-value" id="tile-dispatched">&mdash;</div></div>
+        <div class="summary-tile"><div class="tile-label">Stock Value (Cost)</div><div class="tile-value" id="tile-cost">&mdash;</div></div>
+        <div class="summary-tile"><div class="tile-label">Stock Value (Sell)</div><div class="tile-value blue" id="tile-sell">&mdash;</div></div>
       </div>
-      <div class="search-wrap">
-        <input type="search" class="search-input" id="product-search" placeholder="Search by name or code…">
-      </div>
-      <div class="product-list" id="product-list">
-        <div class="empty-state">Loading products…</div>
-      </div>
+      <div class="search-wrap"><input type="search" class="search-input" id="meter-search" placeholder="Search meter number or type&hellip;"></div>
+      <div id="dashboard-groups"><div class="empty-state">Loading&hellip;</div></div>
     </div>
 
-    <!-- SCAN / MOVEMENT -->
+    <!-- SCAN -->
     <div id="screen-scan" class="screen">
       <div class="scan-wrap">
         <div class="movement-tabs">
-          <button class="mvt-tab active in" data-type="in">▲ Stock In</button>
-          <button class="mvt-tab out" data-type="out">▼ Stock Out</button>
-          <button class="mvt-tab take" data-type="take">⊙ Stock Take</button>
+          <button class="mvt-tab active in" data-type="in">&#9650; Receive</button>
+          <button class="mvt-tab out" data-type="out">&#9660; Install</button>
+          <button class="mvt-tab take" data-type="take">&#9673; Verify</button>
         </div>
-
         <div class="viewfinder-wrap" id="viewfinder-wrap">
           <video id="preview" playsinline autoplay muted></video>
           <div class="scan-line"></div>
           <div class="scan-overlay"><div class="scan-frame"></div></div>
         </div>
-        <button class="btn-manual" id="btn-manual-entry">Enter code manually</button>
+        <button class="btn-manual" id="btn-manual-entry">Enter meter number manually</button>
 
         <div id="scanned-info" style="display:none" class="scanned-result">
-          <div>
-            <div class="scanned-code" id="scanned-code-display"></div>
-            <div class="scanned-name" id="scanned-name-display"></div>
-          </div>
+          <div><div class="scanned-code" id="scanned-code-display"></div><div class="scanned-name" id="scanned-name-display"></div></div>
           <button class="btn btn-sm btn-secondary" id="btn-rescan">Rescan</button>
         </div>
 
-        <!-- STOCK IN FORM -->
+        <!-- RECEIVE (Stock In) -->
         <div id="form-in" class="form-card" style="display:none">
-          <div class="form-title" style="color:var(--green)">▲ Stock In</div>
-          <div class="form-group"><label class="form-label">Quantity Received *</label><input type="number" class="form-input" id="in-qty" placeholder="0" min="0.01" step="any"></div>
+          <div class="form-title" style="color:var(--green)">&#9650; Receive Meter</div>
+          <div class="form-group"><label class="form-label">Category *</label>
+            <select class="form-select" id="in-category"><option value="">Select category&hellip;</option><option>Prepaid Electricity</option><option>Prepaid Water</option></select>
+          </div>
+          <div class="form-group"><label class="form-label">Meter Type *</label>
+            <select class="form-select" id="in-type"><option value="">Select category first&hellip;</option></select>
+          </div>
+          <div id="in-newtype-wrap" style="display:none">
+            <div class="form-group"><label class="form-label">New Meter Type Name *</label><input type="text" class="form-input" id="in-newtype" placeholder="e.g. Landis+Gyr E350"></div>
+            <div class="form-group" id="in-phase-wrap"><label class="form-label">Phase *</label>
+              <select class="form-select" id="in-phase"><option value="">Select phase&hellip;</option><option>Single Phase</option><option>Three Phase</option></select>
+            </div>
+          </div>
           <div class="form-row">
-            <div class="form-group"><label class="form-label">Cost Price (R) *</label><input type="number" class="form-input" id="in-cost" placeholder="0.00" min="0" step="0.01"></div>
-            <div class="form-group"><label class="form-label">Selling Price (R)</label><input type="number" class="form-input" id="in-sell" placeholder="0.00" min="0" step="0.01"></div>
+            <div class="form-group"><label class="form-label">Cost Price (R) *</label><input type="number" class="form-input" id="in-cost" placeholder="0.00" step="0.01"></div>
+            <div class="form-group"><label class="form-label">Selling Price (R)</label><input type="number" class="form-input" id="in-sell" placeholder="0.00" step="0.01"></div>
           </div>
           <div class="form-group"><label class="form-label">Supplier *</label><input type="text" class="form-input" id="in-supplier" placeholder="Supplier name"></div>
           <div class="form-row">
             <div class="form-group"><label class="form-label">Invoice No.</label><input type="text" class="form-input" id="in-invoice" placeholder="INV-001"></div>
-            <div class="form-group"><label class="form-label">PO Number</label><input type="text" class="form-input" id="in-po" placeholder="PO-001"></div>
+            <div class="form-group"><label class="form-label">Received Date *</label><input type="date" class="form-input" id="in-date"></div>
           </div>
-          <div class="form-group"><label class="form-label">Delivery Date *</label><input type="date" class="form-input" id="in-date"></div>
-          <div class="form-group"><label class="form-label">Notes</label><textarea class="form-textarea" id="in-notes" placeholder="Optional notes…"></textarea></div>
-          <button class="btn btn-primary" id="btn-submit-in">Record Stock In</button>
+          <div class="form-group"><label class="form-label">Notes</label><textarea class="form-textarea" id="in-notes" placeholder="Optional"></textarea></div>
+          <button class="btn btn-primary" id="btn-submit-in" style="background:var(--green)">Receive Into Stock</button>
         </div>
 
-        <!-- STOCK OUT FORM -->
+        <!-- INSTALL (Stock Out) -->
         <div id="form-out" class="form-card" style="display:none">
-          <div class="form-title" style="color:var(--red)">▼ Stock Out</div>
-          <div class="form-group"><label class="form-label">Quantity Dispatched *</label><input type="number" class="form-input" id="out-qty" placeholder="0" min="0.01" step="any"></div>
-          <div class="form-group"><label class="form-label">Selling Price (R)</label><input type="number" class="form-input" id="out-sell" placeholder="0.00" min="0" step="0.01"></div>
-          <div class="form-group"><label class="form-label">Reason *</label>
-            <select class="form-select" id="out-reason">
-              <option value="">Select reason…</option>
-              <option>Sale</option><option>Internal use</option><option>Sample</option><option>Damaged</option><option>Other</option>
-            </select>
+          <div class="form-title" style="color:var(--red)">&#9660; Install / Dispatch Meter</div>
+          <div id="out-meter-info" class="form-group"></div>
+          <div class="form-group"><label class="form-label">Customer Name *</label><input type="text" class="form-input" id="out-customer" placeholder="Full name"></div>
+          <div class="form-group"><label class="form-label">Installation Address *</label><textarea class="form-textarea" id="out-address" placeholder="Street, suburb, city"></textarea></div>
+          <div class="form-row">
+            <div class="form-group"><label class="form-label">Client Invoice No. *</label><input type="text" class="form-input" id="out-invoice" placeholder="INV-2026-001"></div>
+            <div class="form-group"><label class="form-label">Account / Ref No.</label><input type="text" class="form-input" id="out-ref" placeholder="ACC-001"></div>
           </div>
           <div class="form-row">
-            <div class="form-group"><label class="form-label">Reference / Job No.</label><input type="text" class="form-input" id="out-ref" placeholder="REF-001"></div>
-            <div class="form-group"><label class="form-label">Dispatch Date *</label><input type="date" class="form-input" id="out-date"></div>
+            <div class="form-group"><label class="form-label">Install Date *</label><input type="date" class="form-input" id="out-date"></div>
+            <div class="form-group"><label class="form-label">Installed By</label><input type="text" class="form-input" id="out-installer" placeholder="Technician"></div>
           </div>
-          <div class="form-group"><label class="form-label">Notes</label><textarea class="form-textarea" id="out-notes" placeholder="Optional notes…"></textarea></div>
-          <button class="btn btn-primary" id="btn-submit-out" style="background:var(--red)">Record Stock Out</button>
+          <div class="form-group"><label class="form-label">Notes</label><textarea class="form-textarea" id="out-notes" placeholder="Optional"></textarea></div>
+          <button class="btn btn-primary" id="btn-submit-out" style="background:var(--red)">Record Installation</button>
         </div>
 
-        <!-- STOCK TAKE FORM -->
+        <!-- VERIFY (Stock Take) -->
         <div id="form-take" class="form-card" style="display:none">
-          <div class="form-title" style="color:var(--blue)">⊙ Stock Take</div>
-          <div class="form-row">
-            <div class="form-group"><label class="form-label">System Qty</label><input type="number" class="form-input" id="take-system" readonly></div>
-            <div class="form-group"><label class="form-label">Counted Qty *</label><input type="number" class="form-input" id="take-counted" placeholder="0" min="0" step="any"></div>
-          </div>
-          <div class="form-group"><label class="form-label">Variance</label><div class="variance-display zero" id="take-variance">—</div></div>
-          <div class="form-group"><label class="form-label">Count Date *</label><input type="date" class="form-input" id="take-date"></div>
-          <div class="form-group"><label class="form-label">Notes</label><textarea class="form-textarea" id="take-notes" placeholder="Optional notes…"></textarea></div>
-          <button class="btn btn-primary" id="btn-submit-take">Record Stock Take</button>
-        </div>
-
-        <!-- ADD PRODUCT FORM (shown when code not found) -->
-        <div id="add-product-form">
-          <div class="form-card">
-            <div class="form-title">New Product</div>
-            <div class="form-group"><label class="form-label">Product Code</label><input type="text" class="form-input" id="np-code" readonly></div>
-            <div class="form-group"><label class="form-label">Product Name *</label><input type="text" class="form-input" id="np-name" placeholder="e.g. Steel Bolt M8x50"></div>
-            <div class="form-group"><label class="form-label">Description</label><input type="text" class="form-input" id="np-desc" placeholder="Optional"></div>
-            <div class="form-row">
-              <div class="form-group"><label class="form-label">Category</label><input type="text" class="form-input" id="np-cat" placeholder="e.g. Fasteners"></div>
-              <div class="form-group"><label class="form-label">Unit</label><input type="text" class="form-input" id="np-unit" placeholder="each / kg / m"></div>
-            </div>
-            <div class="form-row">
-              <div class="form-group"><label class="form-label">Cost Price (R)</label><input type="number" class="form-input" id="np-cost" placeholder="0.00" min="0" step="0.01"></div>
-              <div class="form-group"><label class="form-label">Selling Price (R)</label><input type="number" class="form-input" id="np-sell" placeholder="0.00" min="0" step="0.01"></div>
-            </div>
-            <div class="form-row">
-              <div class="form-group"><label class="form-label">Reorder Level</label><input type="number" class="form-input" id="np-reorder" placeholder="0" min="0"></div>
-              <div class="form-group"><label class="form-label">Reorder Qty</label><input type="number" class="form-input" id="np-reorderqty" placeholder="0" min="0"></div>
-            </div>
-            <div class="form-row">
-              <div class="form-group"><label class="form-label">Supplier</label><input type="text" class="form-input" id="np-supplier" placeholder="Supplier name"></div>
-              <div class="form-group"><label class="form-label">Supplier Code</label><input type="text" class="form-input" id="np-supcode" placeholder="ACC-001"></div>
-            </div>
-            <button class="btn btn-primary" id="btn-save-product">Save Product</button>
-            <button class="btn btn-secondary" id="btn-cancel-addproduct" style="margin-top:8px">Cancel</button>
-          </div>
+          <div class="form-title" style="color:var(--blue)">&#9673; Verify Meter Present</div>
+          <div id="take-meter-info" class="form-group"></div>
+          <div class="form-group"><label class="form-label">Verify Date *</label><input type="date" class="form-input" id="take-date"></div>
+          <div class="form-group"><label class="form-label">Notes</label><textarea class="form-textarea" id="take-notes" placeholder="Optional"></textarea></div>
+          <button class="btn btn-primary" id="btn-submit-take">Confirm Present in Stock</button>
         </div>
       </div>
     </div>
 
     <!-- REPORTS -->
     <div id="screen-reports" class="screen">
-      <div class="section-header">
-        <div class="section-title">Reports</div>
-      </div>
+      <div class="section-header"><div class="section-title">Reports</div></div>
       <div class="report-tabs">
-        <button class="report-tab active" data-report="valuation">Valuation</button>
+        <button class="report-tab active" data-report="valuation">Stock Valuation</button>
         <button class="report-tab" data-report="movements">Movements</button>
+        <button class="report-tab" data-report="installed">Installed Meters</button>
         <button class="report-tab" data-report="margin">Margins</button>
         <button class="report-tab" data-report="supplier">Suppliers</button>
         <button class="report-tab" data-report="lowstock">Low Stock</button>
       </div>
       <div class="date-range-row" id="report-date-row">
-        <div><label class="form-label" style="padding:0 0 4px;display:block">From</label><input type="date" class="form-input" id="report-from"></div>
-        <div><label class="form-label" style="padding:0 0 4px;display:block">To</label><input type="date" class="form-input" id="report-to"></div>
+        <div><label class="form-label" style="display:block;margin-bottom:4px">From</label><input type="date" class="form-input" id="report-from"></div>
+        <div><label class="form-label" style="display:block;margin-bottom:4px">To</label><input type="date" class="form-input" id="report-to"></div>
       </div>
       <div class="export-row">
-        <button class="btn btn-secondary btn-sm" id="btn-export-csv">↓ CSV</button>
-        <button class="btn btn-secondary btn-sm" id="btn-export-xlsx">↓ Excel</button>
         <button class="btn btn-secondary btn-sm" id="btn-run-report">Run Report</button>
+        <button class="btn btn-primary btn-sm" id="btn-export-pdf">&darr; PDF Report</button>
+        <button class="btn btn-secondary btn-sm" id="btn-export-csv">&darr; CSV</button>
+        <button class="btn btn-secondary btn-sm" id="btn-export-xlsx">&darr; Excel</button>
       </div>
       <div id="report-output"></div>
     </div>
 
-    <!-- PRODUCT DETAIL -->
+    <!-- DETAIL -->
     <div id="screen-detail" class="screen">
       <div class="detail-header">
-        <button class="back-btn" id="btn-back-detail">← Back</button>
+        <button class="back-btn" id="btn-back-detail">&larr; Back</button>
         <div class="detail-name" id="detail-name"></div>
         <div class="detail-code" id="detail-code"></div>
       </div>
       <div class="detail-stats">
-        <div class="detail-stat"><div class="detail-stat-val" id="d-qty">—</div><div class="detail-stat-lbl">On Hand</div></div>
-        <div class="detail-stat"><div class="detail-stat-val" id="d-cost">—</div><div class="detail-stat-lbl">Cost (R)</div></div>
-        <div class="detail-stat"><div class="detail-stat-val" id="d-sell">—</div><div class="detail-stat-lbl">Sell (R)</div></div>
+        <div class="detail-stat"><div class="detail-stat-val" id="d-instock">&mdash;</div><div class="detail-stat-lbl">In Stock</div></div>
+        <div class="detail-stat"><div class="detail-stat-val" id="d-cost">&mdash;</div><div class="detail-stat-lbl">Cost (R)</div></div>
+        <div class="detail-stat"><div class="detail-stat-val" id="d-sell">&mdash;</div><div class="detail-stat-lbl">Sell (R)</div></div>
       </div>
-      <div style="padding:0 16px 12px;display:flex;gap:8px">
-        <button class="btn btn-secondary btn-sm" id="btn-detail-edit">Edit Product</button>
-        <button class="btn btn-primary btn-sm" id="btn-detail-scan">Scan Movement</button>
-      </div>
-      <div id="detail-ledger"></div>
+      <div id="detail-meters"></div>
     </div>
 
     <!-- SETTINGS -->
     <div id="screen-settings" class="screen">
       <div class="section-header"><div class="section-title">Settings</div></div>
       <div class="settings-section">
-        <div class="settings-section-title">Company</div>
-        <div class="form-group"><label class="form-label">Company Name</label><input type="text" class="form-input" id="setting-company" placeholder="My Warehouse (Pty) Ltd"></div>
+        <div class="settings-section-title">Company (for installation PDFs)</div>
+        <div class="form-group"><label class="form-label">Company Name</label><input type="text" class="form-input" id="setting-company" placeholder="Inceku Energy Stewards"></div>
+        <div class="form-group"><label class="form-label">Company Contact / Phone</label><input type="text" class="form-input" id="setting-contact" placeholder="Phone / email"></div>
         <button class="btn btn-secondary btn-sm" id="btn-save-settings">Save</button>
       </div>
       <div class="settings-section">
         <div class="settings-section-title">Data</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn btn-secondary btn-sm" id="btn-export-all">Export All Data (JSON)</button>
-          <a id="sheets-link" href="#" target="_blank" class="btn btn-secondary btn-sm" style="text-decoration:none;display:inline-flex;align-items:center">Open in Google Sheets ↗</a>
+          <button class="btn btn-secondary btn-sm" id="btn-export-all">Backup (JSON)</button>
+          <a id="sheets-link" href="#" target="_blank" class="btn btn-secondary btn-sm" style="text-decoration:none;display:inline-flex;align-items:center">Open Spreadsheet &#8599;</a>
         </div>
       </div>
       <div class="settings-section">
@@ -553,96 +394,49 @@ html, body { height: 100%; overflow: hidden; background: var(--bg); color: var(-
 
   </div>
 
-  <!-- BOTTOM NAV -->
   <nav class="bottom-nav">
-    <button class="nav-item active" data-screen="dashboard"><span class="nav-icon">⊞</span>Dashboard</button>
-    <button class="nav-item" data-screen="scan"><span class="nav-icon">⊡</span>Scan</button>
-    <button class="nav-item" data-screen="reports"><span class="nav-icon">⊟</span>Reports</button>
-    <button class="nav-item" data-screen="settings"><span class="nav-icon">⊙</span>Settings</button>
+    <button class="nav-item active" data-screen="dashboard"><span class="nav-icon">&#9638;</span>Stock</button>
+    <button class="nav-item" data-screen="scan"><span class="nav-icon">&#9641;</span>Scan</button>
+    <button class="nav-item" data-screen="reports"><span class="nav-icon">&#9636;</span>Reports</button>
+    <button class="nav-item" data-screen="settings"><span class="nav-icon">&#9673;</span>Settings</button>
   </nav>
 </div>
 
-<!-- LOADER -->
 <div class="loader-overlay" id="loader" style="display:none"><div class="loader"></div></div>
-
-<!-- TOAST -->
 <div class="toast" id="toast"></div>
 
-<!-- EDIT PRODUCT MODAL -->
-<div class="modal-overlay" id="modal-edit" style="display:none">
-  <div class="modal-sheet">
-    <div class="modal-header">
-      <div class="modal-title">Edit Product</div>
-      <button class="modal-close" id="btn-modal-close">×</button>
-    </div>
-    <div class="modal-body">
-      <input type="hidden" id="edit-code-hidden">
-      <div class="form-group"><label class="form-label">Product Name *</label><input type="text" class="form-input" id="edit-name"></div>
-      <div class="form-group"><label class="form-label">Description</label><input type="text" class="form-input" id="edit-desc"></div>
-      <div class="form-row">
-        <div class="form-group"><label class="form-label">Category</label><input type="text" class="form-input" id="edit-cat"></div>
-        <div class="form-group"><label class="form-label">Unit</label><input type="text" class="form-input" id="edit-unit"></div>
-      </div>
-      <div class="form-row">
-        <div class="form-group"><label class="form-label">Cost Price (R)</label><input type="number" class="form-input" id="edit-cost" step="0.01"></div>
-        <div class="form-group"><label class="form-label">Selling Price (R)</label><input type="number" class="form-input" id="edit-sell" step="0.01"></div>
-      </div>
-      <div class="form-row">
-        <div class="form-group"><label class="form-label">Reorder Level</label><input type="number" class="form-input" id="edit-reorder"></div>
-        <div class="form-group"><label class="form-label">Reorder Qty</label><input type="number" class="form-input" id="edit-reorderqty"></div>
-      </div>
-      <div class="form-row">
-        <div class="form-group"><label class="form-label">Supplier</label><input type="text" class="form-input" id="edit-supplier"></div>
-        <div class="form-group"><label class="form-label">Supplier Code</label><input type="text" class="form-input" id="edit-supcode"></div>
-      </div>
-      <button class="btn btn-primary" id="btn-save-edit" style="margin-top:4px">Save Changes</button>
-    </div>
-  </div>
-</div>
-
 <script>
-// ============================================================
-// CONFIG — REPLACE THESE TWO VALUES
-// ============================================================
 const GOOGLE_CLIENT_ID = '943003682030-2j7t31r40np3b4h0ncp91jjf3o3ms0c3.apps.googleusercontent.com';
 const SPREADSHEET_ID   = '1qWg-38IyEjSzvrRmGliHqEGKdqLHxSWs6BoRjhHZVCU';
-// ============================================================
+const LOGO_DATA = 'data:image/png;base64,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';
 
 const SCOPES = 'https://www.googleapis.com/auth/spreadsheets';
-const SHEETS = { Products:'Products', Ledger:'Ledger', PriceHistory:'PriceHistory', Users:'Users', Settings:'Settings' };
+const SHEETS = { Meters:'Meters', MeterTypes:'MeterTypes', Ledger:'Ledger', Settings:'Settings', Users:'Users' };
 const HEADERS = {
-  Products: ['ProductCode','ProductName','Description','Category','UnitOfMeasure','CostPrice','SellingPrice','ReorderLevel','ReorderQty','SupplierName','SupplierCode','DateCreated','DateUpdated','CurrentStock'],
-  Ledger:   ['TransactionID','Timestamp','MovementType','ProductCode','ProductName','Qty','CostPrice','SellingPrice','TransactionValueCost','TransactionValueSelling','RunningBalance','SupplierName','InvoiceNumber','PurchaseOrderNumber','DispatchReason','Reference','MovementDate','PerformedBy','Notes'],
-  PriceHistory: ['Timestamp','ProductCode','ProductName','PriceType','OldPrice','NewPrice','ChangedBy'],
-  Users: ['Name','GoogleEmail','DateAdded'],
-  Settings: ['Key','Value']
+  Meters: ['MeterNumber','Category','MeterType','Phase','CostPrice','SellingPrice','SupplierName','InvoiceNumber','Status','CustomerName','InstallAddress','DateReceived','DateDispatched','DateCreated','DateUpdated','DispatchInvoice'],
+  MeterTypes: ['Category','MeterType','Phase','CostPrice','SellingPrice','ReorderLevel','SupplierName','DateCreated'],
+  Ledger: ['TransactionID','Timestamp','MovementType','MeterNumber','Category','MeterType','Phase','CostPrice','SellingPrice','SupplierName','InvoiceNumber','CustomerName','InstallAddress','Reference','MovementDate','PerformedBy','Notes','DispatchInvoice'],
+  Settings: ['Key','Value'],
+  Users: ['Name','Email','PasswordHash','Salt','Role','DateAdded','Active']
 };
 
-// State
-let accessToken = null, currentUser = null, products = [], currentProduct = null, currentMovementType = 'in';
-let scanner = null, scannerActive = false;
+let accessToken=null, currentUser=null, meters=[], meterTypes=[], settings={}, currentMovementType='in', currentTypeKey=null;
+let scanner=null, scannerActive=false;
 
-// ---- UTILS ----
 const fmt = v => 'R ' + parseFloat(v||0).toLocaleString('en-ZA',{minimumFractionDigits:2,maximumFractionDigits:2});
-const fmtQty = v => parseFloat(v||0).toLocaleString('en-ZA',{maximumFractionDigits:4});
 const today = () => new Date().toISOString().split('T')[0];
-const fmtDate = d => { if(!d) return ''; const p=d.split('-'); return p.length===3?`${p[2]}/${p[1]}/${p[0]}`:d; };
+const fmtDate = d => { if(!d) return ''; const p=String(d).split('-'); return p.length===3?p[2]+'/'+p[1]+'/'+p[0]:d; };
 const round2 = v => Math.round(parseFloat(v||0)*100)/100;
 const uid = () => 'TXN-'+new Date().toISOString().replace(/[-:T]/g,'').slice(0,14)+'-'+Math.floor(1000+Math.random()*9000);
-function showLoader(v){ document.getElementById('loader').style.display = v?'flex':'none'; }
-function toast(msg, type=''){
-  const t = document.getElementById('toast');
-  t.textContent = msg; t.className = 'toast show'+(type?' '+type:'');
-  setTimeout(()=>t.className='toast',2800);
-}
+function showLoader(v){ document.getElementById('loader').style.display=v?'flex':'none'; }
+function toast(msg,type){ const t=document.getElementById('toast'); t.textContent=msg; t.className='toast show'+(type?' '+type:''); setTimeout(()=>t.className='toast',3000); }
 
-// ---- AUTH ----
 function initGoogleAuth(){
   document.getElementById('btn-google-signin').addEventListener('click', ()=>{
     const client = google.accounts.oauth2.initTokenClient({
       client_id: GOOGLE_CLIENT_ID, scope: SCOPES,
       callback: async (resp) => {
-        if(resp.error){ showAuthError(resp.error); return; }
+        if(resp.error){ document.getElementById('auth-error').textContent=resp.error; document.getElementById('auth-error').style.display='block'; return; }
         accessToken = resp.access_token;
         await gapi.client.init({});
         gapi.client.setToken({ access_token: accessToken });
@@ -653,690 +447,649 @@ function initGoogleAuth(){
   });
 }
 
-function showAuthError(msg){
-  const el = document.getElementById('auth-error');
-  el.textContent = msg; el.style.display = 'block';
-}
-
 async function onSignedIn(){
   showLoader(true);
   try {
-    const profile = await fetchUserProfile();
-    currentUser = profile.name || profile.email;
+    const r = await fetch('https://www.googleapis.com/oauth2/v3/userinfo',{headers:{Authorization:'Bearer '+accessToken}});
+    const profile = await r.json();
+    currentUser = profile.name||profile.email;
     document.getElementById('header-username').textContent = currentUser;
     document.getElementById('settings-user-info').textContent = profile.email;
-    document.getElementById('auth-screen').style.display = 'none';
+    document.getElementById('auth-screen').style.display='none';
     document.getElementById('app').classList.add('active');
-    document.getElementById('sheets-link').href = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/edit`;
+    document.getElementById('sheets-link').href = 'https://docs.google.com/spreadsheets/d/'+SPREADSHEET_ID+'/edit';
     await initSpreadsheet();
-    await loadDashboard();
-  } catch(e){ showAuthError('Sign-in failed: '+e.message); }
+    await loadAll();
+    loadDashboard();
+  } catch(e){ document.getElementById('auth-error').textContent='Sign-in failed: '+e.message; document.getElementById('auth-error').style.display='block'; }
   finally { showLoader(false); }
 }
 
-async function fetchUserProfile(){
-  const r = await fetch('https://www.googleapis.com/oauth2/v3/userinfo',{headers:{Authorization:'Bearer '+accessToken}});
-  return r.json();
-}
-
-// ---- GAPI SHEETS WRAPPER ----
 async function sheetsRequest(config){
   config.headers = config.headers||{};
-  config.headers['Authorization'] = 'Bearer '+accessToken;
+  config.headers['Authorization']='Bearer '+accessToken;
   let attempts=0;
   while(attempts<3){
-    const r = await fetch(config.url, {method:config.method||'GET', headers:config.headers, body:config.body?JSON.stringify(config.body):undefined});
+    const r = await fetch(config.url,{method:config.method||'GET',headers:config.headers,body:config.body?JSON.stringify(config.body):undefined});
     if(r.status===429){ await new Promise(res=>setTimeout(res,1000*(attempts+1))); attempts++; continue; }
     if(r.status===401){ toast('Session expired. Please sign in again.','error'); throw new Error('401'); }
     const data = await r.json();
     if(!r.ok) throw new Error(data.error?.message||'Sheets API error');
     return data;
   }
-  throw new Error('Rate limit exceeded after 3 attempts');
+  throw new Error('Rate limit exceeded');
+}
+async function getSheetData(name){
+  const d = await sheetsRequest({url:'https://sheets.googleapis.com/v4/spreadsheets/'+SPREADSHEET_ID+'/values/'+encodeURIComponent(name)});
+  const rows=d.values||[]; if(rows.length<2) return [];
+  const h=rows[0]; return rows.slice(1).map(row=>{const o={}; h.forEach((k,i)=>o[k]=row[i]||''); return o;});
+}
+async function appendRow(name,values){
+  await sheetsRequest({method:'POST',url:'https://sheets.googleapis.com/v4/spreadsheets/'+SPREADSHEET_ID+'/values/'+encodeURIComponent(name)+'!A1:append?valueInputOption=USER_ENTERED',body:{values:[values]}});
+}
+async function findRowIndex(name,colIndex,value){
+  const d = await sheetsRequest({url:'https://sheets.googleapis.com/v4/spreadsheets/'+SPREADSHEET_ID+'/values/'+encodeURIComponent(name)});
+  const rows=d.values||[]; for(let i=1;i<rows.length;i++){ if((rows[i][colIndex]||'').toString()===value.toString()) return i+1; } return -1;
+}
+async function updateRow(name,rowIdx,obj){
+  const h=HEADERS[name]; const row=h.map(k=>obj[k]!==undefined?obj[k]:'');
+  const lastCol=String.fromCharCode(65+h.length-1);
+  await sheetsRequest({method:'PUT',url:'https://sheets.googleapis.com/v4/spreadsheets/'+SPREADSHEET_ID+'/values/'+encodeURIComponent(name)+'!A'+rowIdx+':'+lastCol+rowIdx+'?valueInputOption=USER_ENTERED',body:{values:[row]}});
 }
 
-async function getSheetData(sheetName){
-  const d = await sheetsRequest({url:`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(sheetName)}`});
-  const rows = d.values||[];
-  if(rows.length<2) return [];
-  const headers = rows[0];
-  return rows.slice(1).map(row=>{ const o={}; headers.forEach((h,i)=>o[h]=row[i]||''); return o; });
-}
-
-async function appendRow(sheetName, values){
-  await sheetsRequest({
-    method:'POST',
-    url:`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(sheetName)}!A1:append?valueInputOption=USER_ENTERED`,
-    body:{ values:[values] }
-  });
-}
-
-async function updateCell(range, value){
-  await sheetsRequest({
-    method:'PUT',
-    url:`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(range)}?valueInputOption=USER_ENTERED`,
-    body:{ values:[[value]] }
-  });
-}
-
-async function findRowIndex(sheetName, colIndex, value){
-  const d = await sheetsRequest({url:`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent(sheetName)}`});
-  const rows = d.values||[];
-  for(let i=1;i<rows.length;i++){ if((rows[i][colIndex]||'').toString()===value.toString()) return i+1; }
-  return -1;
-}
-
-// ---- INIT SPREADSHEET ----
 async function initSpreadsheet(){
-  const meta = await sheetsRequest({url:`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}?fields=sheets.properties.title`});
+  const meta = await sheetsRequest({url:'https://sheets.googleapis.com/v4/spreadsheets/'+SPREADSHEET_ID+'?fields=sheets.properties.title'});
   const existing = (meta.sheets||[]).map(s=>s.properties.title);
   const toCreate = Object.keys(SHEETS).filter(s=>!existing.includes(s));
-  if(toCreate.length>0){
-    const requests = toCreate.map(s=>({ addSheet:{ properties:{ title:s } } }));
-    await sheetsRequest({ method:'POST', url:`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}:batchUpdate`, body:{ requests } });
-    for(const s of toCreate){ await appendRow(s, HEADERS[s]); }
-    const settingsRows = await getSheetData('Settings');
-    if(!settingsRows.find(r=>r.Key==='CompanyName')) await appendRow('Settings',['CompanyName','My Warehouse']);
-    if(!settingsRows.find(r=>r.Key==='Currency')) await appendRow('Settings',['Currency','ZAR']);
+  if(toCreate.length){
+    await sheetsRequest({method:'POST',url:'https://sheets.googleapis.com/v4/spreadsheets/'+SPREADSHEET_ID+':batchUpdate',body:{requests:toCreate.map(s=>({addSheet:{properties:{title:s}}}))}});
+    for(const s of toCreate){ await appendRow(s,HEADERS[s]); }
+    if(toCreate.includes('Settings')){ await appendRow('Settings',['CompanyName','Inceku Energy Stewards']); await appendRow('Settings',['CompanyContact','']); }
+  }
+  // Migrate: ensure existing tabs have all current columns (adds new column labels at the end)
+  for(const s of ['Meters','Ledger']){
+    if(existing.includes(s)){
+      const d = await sheetsRequest({url:'https://sheets.googleapis.com/v4/spreadsheets/'+SPREADSHEET_ID+'/values/'+encodeURIComponent(s)+'!1:1'});
+      const current = (d.values&&d.values[0])||[];
+      if(current.length < HEADERS[s].length){
+        const lastCol = String.fromCharCode(65+HEADERS[s].length-1);
+        await sheetsRequest({method:'PUT',url:'https://sheets.googleapis.com/v4/spreadsheets/'+SPREADSHEET_ID+'/values/'+encodeURIComponent(s)+'!A1:'+lastCol+'1?valueInputOption=USER_ENTERED',body:{values:[HEADERS[s]]}});
+      }
+    }
   }
 }
 
-// ---- PRODUCTS ----
-async function loadProducts(){
-  products = await getSheetData('Products');
-  return products;
+async function loadAll(){
+  meters = await getSheetData('Meters');
+  meterTypes = await getSheetData('MeterTypes');
+  const sr = await getSheetData('Settings');
+  settings = {}; sr.forEach(r=>settings[r.Key]=r.Value);
+  document.getElementById('setting-company').value = settings.CompanyName||'';
+  document.getElementById('setting-contact').value = settings.CompanyContact||'';
 }
 
-async function getProductByCode(code){
-  return products.find(p=>p.ProductCode===code) || null;
-}
-
-async function saveNewProduct(p){
-  const now = new Date().toISOString();
-  await appendRow('Products',[
-    p.ProductCode, p.ProductName, p.Description||'', p.Category||'', p.UnitOfMeasure||'each',
-    p.CostPrice||0, p.SellingPrice||0, p.ReorderLevel||0, p.ReorderQty||0,
-    p.SupplierName||'', p.SupplierCode||'', now, now, 0
-  ]);
-  products.push({...p, CurrentStock:'0', DateCreated:now, DateUpdated:now});
-}
-
-async function updateProductRow(code, updates){
-  const rowIdx = await findRowIndex('Products', 0, code);
-  if(rowIdx<0) return;
-  const p = products.find(x=>x.ProductCode===code);
-  if(!p) return;
-  const now = new Date().toISOString();
-  if(updates.CostPrice!==undefined && round2(updates.CostPrice)!==round2(p.CostPrice)){
-    await appendRow('PriceHistory',[now,code,p.ProductName,'Cost',p.CostPrice,updates.CostPrice,currentUser]);
-  }
-  if(updates.SellingPrice!==undefined && round2(updates.SellingPrice)!==round2(p.SellingPrice)){
-    await appendRow('PriceHistory',[now,code,p.ProductName,'Selling',p.SellingPrice,updates.SellingPrice,currentUser]);
-  }
-  Object.assign(p, updates, {DateUpdated:now});
-  const headers = HEADERS.Products;
-  const row = headers.map(h=>p[h]||'');
-  await sheetsRequest({
-    method:'PUT',
-    url:`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/${encodeURIComponent('Products')}!A${rowIdx}:${String.fromCharCode(65+headers.length-1)}${rowIdx}?valueInputOption=USER_ENTERED`,
-    body:{ values:[row] }
-  });
-}
-
-async function updateStock(code, newQty){
-  const rowIdx = await findRowIndex('Products', 0, code);
-  if(rowIdx<0) return;
-  const col = HEADERS.Products.indexOf('CurrentStock');
-  const colLetter = String.fromCharCode(65+col);
-  await updateCell(`Products!${colLetter}${rowIdx}`, newQty);
-  const p = products.find(x=>x.ProductCode===code);
-  if(p) p.CurrentStock = newQty.toString();
-}
-
-// ---- LEDGER ----
-async function recordMovement(entry){
-  await appendRow('Ledger',[
-    entry.TransactionID, entry.Timestamp, entry.MovementType, entry.ProductCode, entry.ProductName,
-    entry.Qty, entry.CostPrice, entry.SellingPrice, entry.TransactionValueCost, entry.TransactionValueSelling,
-    entry.RunningBalance, entry.SupplierName||'', entry.InvoiceNumber||'', entry.PurchaseOrderNumber||'',
-    entry.DispatchReason||'', entry.Reference||'', entry.MovementDate, entry.PerformedBy, entry.Notes||''
-  ]);
-}
+function typeKey(cat,type,phase){ return cat+'||'+type+'||'+(phase||''); }
+function metersForType(cat,type,phase){ return meters.filter(m=>m.Category===cat&&m.MeterType===type&&(m.Phase||'')===(phase||'')); }
 
 // ---- DASHBOARD ----
-async function loadDashboard(){
+function loadDashboard(){
   showLoader(true);
-  try {
-    await loadProducts();
-    renderDashboard(products);
-  } catch(e){ toast('Failed to load products: '+e.message,'error'); }
-  finally { showLoader(false); }
+  try { renderDashboard(); } finally { showLoader(false); }
 }
-
-function renderDashboard(prods){
-  let totalCost=0, totalSell=0, lowCount=0;
-  prods.forEach(p=>{
-    const qty=parseFloat(p.CurrentStock||0);
-    totalCost += round2(qty * parseFloat(p.CostPrice||0));
-    totalSell += round2(qty * parseFloat(p.SellingPrice||0));
-    const reorder=parseFloat(p.ReorderLevel||0);
-    if(reorder>0 && qty<=reorder) lowCount++;
+function renderDashboard(filter){
+  let inStock=0, dispatched=0, costVal=0, sellVal=0;
+  meters.forEach(m=>{
+    if(m.Status==='In Stock'){ inStock++; costVal+=parseFloat(m.CostPrice||0); sellVal+=parseFloat(m.SellingPrice||0); }
+    else if(m.Status==='Dispatched') dispatched++;
   });
-  document.getElementById('tile-products').textContent = prods.length;
-  document.getElementById('tile-low').textContent = lowCount;
-  document.getElementById('tile-cost').textContent = fmt(totalCost);
-  document.getElementById('tile-sell').textContent = fmt(totalSell);
+  document.getElementById('tile-instock').textContent = inStock;
+  document.getElementById('tile-dispatched').textContent = dispatched;
+  document.getElementById('tile-cost').textContent = fmt(costVal);
+  document.getElementById('tile-sell').textContent = fmt(sellVal);
   document.getElementById('dash-updated').textContent = 'Updated '+new Date().toLocaleTimeString('en-ZA',{hour:'2-digit',minute:'2-digit'});
-  renderProductList(prods);
+
+  const cats = ['Prepaid Electricity','Prepaid Water'];
+  const container = document.getElementById('dashboard-groups');
+  let html='';
+  const q = (filter||'').toLowerCase();
+
+  // Build set of type keys from both meterTypes and meters
+  const keys = {};
+  meterTypes.forEach(t=>{ keys[typeKey(t.Category,t.MeterType,t.Phase)]={cat:t.Category,type:t.MeterType,phase:t.Phase,reorder:parseFloat(t.ReorderLevel||0),cost:parseFloat(t.CostPrice||0),sell:parseFloat(t.SellingPrice||0)}; });
+  meters.forEach(m=>{ const k=typeKey(m.Category,m.MeterType,m.Phase); if(!keys[k]) keys[k]={cat:m.Category,type:m.MeterType,phase:m.Phase,reorder:0,cost:parseFloat(m.CostPrice||0),sell:parseFloat(m.SellingPrice||0)}; });
+
+  cats.forEach(cat=>{
+    const catKeys = Object.entries(keys).filter(([k,v])=>v.cat===cat);
+    const visible = catKeys.filter(([k,v])=> !q || v.type.toLowerCase().includes(q) || metersForType(v.cat,v.type,v.phase).some(m=>m.MeterNumber.toLowerCase().includes(q)));
+    if(!visible.length) return;
+    const icon = cat==='Prepaid Electricity'?'&#9889;':'&#128167;';
+    html += '<div class="cat-group"><div class="cat-header"><span class="cat-icon">'+icon+'</span>'+cat+'</div>';
+    visible.forEach(([k,v])=>{
+      const list = metersForType(v.cat,v.type,v.phase);
+      const inStk = list.filter(m=>m.Status==='In Stock').length;
+      const status = v.reorder<=0?(inStk<=0?'critical':'ok'): inStk<=0?'critical': inStk<=v.reorder?'low':'ok';
+      const cval = inStk*v.cost, sval=inStk*v.sell;
+      const marginPct = v.sell>0&&v.cost>0?Math.round((1-v.cost/v.sell)*100)+'%':'&mdash;';
+      html += '<div class="type-card" onclick="openDetail(\''+encodeURIComponent(k)+'\')">'+
+        '<div class="type-card-header"><div><div class="type-name">'+v.type+'</div>'+(v.phase?'<div class="type-phase">'+v.phase+'</div>':'')+'</div>'+
+        '<div class="type-count '+status+'">'+inStk+' in stock</div></div>'+
+        '<div class="type-values"><div class="val-item"><div class="val-label">Cost Value</div><div class="val-num">'+fmt(cval)+'</div></div>'+
+        '<div class="val-item"><div class="val-label">Sell Value</div><div class="val-num">'+fmt(sval)+'</div></div>'+
+        '<div class="val-item"><div class="val-label">Margin</div><div class="val-num">'+marginPct+'</div></div></div></div>';
+    });
+    html += '</div>';
+  });
+  container.innerHTML = html || '<div class="empty-state">No meters yet. Tap Scan to receive your first meter.</div>';
 }
+document.getElementById('meter-search').addEventListener('input', function(){ renderDashboard(this.value); });
 
-function renderProductList(prods){
-  const list = document.getElementById('product-list');
-  if(!prods.length){ list.innerHTML='<div class="empty-state">No products found. Scan a barcode to add one.</div>'; return; }
-  list.innerHTML = prods.map(p=>{
-    const qty=parseFloat(p.CurrentStock||0), reorder=parseFloat(p.ReorderLevel||0);
-    const status = reorder<=0?'ok': qty<=0?'critical': qty<=reorder?'low':'ok';
-    const label = status==='critical'?'Critical':status==='low'?'Low Stock':'In Stock';
-    const costVal = round2(qty*parseFloat(p.CostPrice||0));
-    const sellVal = round2(qty*parseFloat(p.SellingPrice||0));
-    return `<div class="product-card" onclick="openDetail('${p.ProductCode}')">
-      <div class="product-card-header">
-        <div><div class="product-name">${p.ProductName}</div><div class="product-code">${p.ProductCode}</div></div>
-        <div class="stock-badge ${status}">${fmtQty(qty)} ${p.UnitOfMeasure||''}</div>
-      </div>
-      <div class="product-values">
-        <div class="val-item"><div class="val-label">Cost Value</div><div class="val-num">${fmt(costVal)}</div></div>
-        <div class="val-item"><div class="val-label">Sell Value</div><div class="val-num">${fmt(sellVal)}</div></div>
-        <div class="val-item"><div class="val-label">Margin</div><div class="val-num">${p.SellingPrice>0&&p.CostPrice>0?Math.round((1-parseFloat(p.CostPrice)/parseFloat(p.SellingPrice))*100)+'%':'—'}</div></div>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-document.getElementById('product-search').addEventListener('input', function(){
-  const q = this.value.toLowerCase();
-  const filtered = q ? products.filter(p=>p.ProductName.toLowerCase().includes(q)||p.ProductCode.toLowerCase().includes(q)) : products;
-  renderProductList(filtered);
-});
-
-// ---- PRODUCT DETAIL ----
-async function openDetail(code){
-  const p = products.find(x=>x.ProductCode===code);
-  if(!p) return;
-  currentProduct = p;
-  document.getElementById('detail-name').textContent = p.ProductName;
-  document.getElementById('detail-code').textContent = p.ProductCode + ' · ' + (p.Category||'Uncategorised') + ' · ' + (p.UnitOfMeasure||'');
-  document.getElementById('d-qty').textContent = fmtQty(p.CurrentStock||0);
-  document.getElementById('d-cost').textContent = fmt(p.CostPrice||0);
-  document.getElementById('d-sell').textContent = fmt(p.SellingPrice||0);
+// ---- DETAIL ----
+function openDetail(encKey){
+  const k = decodeURIComponent(encKey);
+  const [cat,type,phase] = k.split('||');
+  currentTypeKey = k;
+  const list = metersForType(cat,type,phase);
+  const inStk = list.filter(m=>m.Status==='In Stock');
+  const t = meterTypes.find(x=>typeKey(x.Category,x.MeterType,x.Phase)===k);
+  const cost = t?parseFloat(t.CostPrice||0):(list[0]?parseFloat(list[0].CostPrice||0):0);
+  const sell = t?parseFloat(t.SellingPrice||0):(list[0]?parseFloat(list[0].SellingPrice||0):0);
+  document.getElementById('detail-name').textContent = type;
+  document.getElementById('detail-code').textContent = cat+(phase?' \u00b7 '+phase:'');
+  document.getElementById('d-instock').textContent = inStk.length;
+  document.getElementById('d-cost').textContent = fmt(cost);
+  document.getElementById('d-sell').textContent = fmt(sell);
+  const dm = document.getElementById('detail-meters');
+  if(!list.length){ dm.innerHTML='<div class="empty-state">No meters of this type.</div>'; }
+  else {
+    list.sort((a,b)=> (a.Status===b.Status?0: a.Status==='In Stock'?-1:1));
+    dm.innerHTML = list.map(m=>{
+      const st = m.Status==='In Stock'?'instock':'dispatched';
+      let sub = 'Received '+fmtDate(m.DateReceived)+(m.InvoiceNumber?' \u00b7 Supplier Inv: '+m.InvoiceNumber:'');
+      if(m.Status==='Dispatched'){
+        sub = 'Installed '+fmtDate(m.DateDispatched)+' \u2192 '+(m.CustomerName||'')
+            + (m.InstallAddress?'<br>'+m.InstallAddress:'')
+            + '<br><span style="color:var(--text2)">Client Inv: '+(m.DispatchInvoice||'-')+'</span>'
+            + '<br><span style="color:var(--text3)">Received '+fmtDate(m.DateReceived)+(m.InvoiceNumber?' \u00b7 Supplier Inv '+m.InvoiceNumber:'')+'</span>';
+      }
+      return '<div class="meter-row"><div style="flex:1"><div class="meter-num">'+m.MeterNumber+'</div><div class="meter-sub">'+sub+'</div></div>'+
+        '<div class="meter-status '+st+'">'+m.Status+'</div></div>';
+    }).join('');
+  }
   showScreen('detail');
-  showLoader(true);
-  try {
-    const ledger = await getSheetData('Ledger');
-    const entries = ledger.filter(e=>e.ProductCode===code).reverse();
-    const dl = document.getElementById('detail-ledger');
-    if(!entries.length){ dl.innerHTML='<div class="empty-state">No movements recorded yet.</div>'; return; }
-    dl.innerHTML = entries.map(e=>`
-      <div class="ledger-entry">
-        <div>
-          <div><span class="ledger-type ${e.MovementType==='Stock In'?'in':e.MovementType==='Stock Out'?'out':'take'}">${e.MovementType}</span></div>
-          <div class="ledger-date">${fmtDate(e.MovementDate)} · ${e.PerformedBy}</div>
-          ${e.InvoiceNumber?`<div class="ledger-user">${e.InvoiceNumber}</div>`:''}
-          ${e.Notes?`<div class="ledger-user" style="font-style:italic">${e.Notes}</div>`:''}
-        </div>
-        <div style="text-align:right">
-          <div class="ledger-qty">${e.MovementType==='Stock In'?'+':e.MovementType==='Stock Out'?'-':'='}${fmtQty(e.Qty)}</div>
-          <div class="ledger-balance">Bal: ${fmtQty(e.RunningBalance)}</div>
-          <div class="ledger-balance">${fmt(e.TransactionValueCost)}</div>
-        </div>
-      </div>`).join('');
-  } catch(er){ toast('Could not load ledger: '+er.message,'error'); }
-  finally { showLoader(false); }
 }
-
 document.getElementById('btn-back-detail').addEventListener('click',()=>showScreen('dashboard'));
-document.getElementById('btn-detail-scan').addEventListener('click',()=>{
-  showScreen('scan'); startScannerForCode(currentProduct.ProductCode);
-});
-document.getElementById('btn-detail-edit').addEventListener('click',()=>openEditModal(currentProduct));
 
 // ---- SCANNER ----
 async function startScanner(){
   stopScanner();
   try {
-    // Step 1: explicitly request camera permission first
-    const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: 'environment' } } });
-    // Permission granted — stop this stream, ZXing will open its own
-    stream.getTracks().forEach(t => t.stop());
-
-    // Step 2: get device list now that permission is granted
+    const stream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:{ideal:'environment'} } });
+    stream.getTracks().forEach(t=>t.stop());
     const devices = await ZXingBrowser.BrowserMultiFormatReader.listVideoInputDevices();
     const back = devices.find(d=>d.label.toLowerCase().includes('back'))||devices[devices.length-1];
     scanner = new ZXingBrowser.BrowserMultiFormatReader();
     scannerActive = true;
-    await scanner.decodeFromVideoDevice(back?.deviceId||undefined, 'preview', async (result, err)=>{
-      if(result && scannerActive){
-        scannerActive = false;
-        const code = result.getText();
-        handleScannedCode(code);
-      }
+    await scanner.decodeFromVideoDevice(back?.deviceId||undefined,'preview',(result,err)=>{
+      if(result&&scannerActive){ scannerActive=false; handleScannedCode(result.getText()); }
     });
   } catch(e){
-    let msg = 'Camera not available.<br>Use manual entry below.';
-    if(e.name === 'NotAllowedError') msg = 'Camera permission denied.<br>Please allow camera access and try again.';
-    if(e.name === 'NotFoundError') msg = 'No camera found on this device.';
-    document.getElementById('viewfinder-wrap').innerHTML=`<div style="padding:20px;text-align:center;color:var(--text2);font-size:0.85rem">${msg}</div>`;
+    let msg='Camera not available.<br>Use manual entry below.';
+    if(e.name==='NotAllowedError') msg='Camera permission denied.<br>Allow camera access and reload.';
+    if(e.name==='NotFoundError') msg='No camera found on this device.';
+    document.getElementById('viewfinder-wrap').innerHTML='<div style="padding:30px 20px;text-align:center;color:var(--text2);font-size:0.85rem">'+msg+'</div>';
   }
 }
+function stopScanner(){ if(scanner){ try{scanner.reset();}catch(e){} scanner=null; } scannerActive=false; }
 
-function stopScanner(){
-  if(scanner){ try{ scanner.reset(); }catch(e){} scanner=null; }
-  scannerActive=false;
-}
-
-function startScannerForCode(code){
+function handleScannedCode(code){
   stopScanner();
-  handleScannedCode(code);
-}
-
-async function handleScannedCode(code){
-  stopScanner();
-  const p = await getProductByCode(code)||products.find(x=>x.ProductCode===code);
+  code = code.trim();
   document.getElementById('scanned-code-display').textContent = code;
-  if(p){
-    document.getElementById('scanned-name-display').textContent = p.ProductName+' · '+fmtQty(p.CurrentStock)+' '+p.UnitOfMeasure;
-    document.getElementById('scanned-info').style.display='flex';
-    showMovementForm(currentMovementType, p);
-    document.getElementById('add-product-form').classList.remove('active');
-  } else {
-    document.getElementById('scanned-name-display').textContent = 'New product — fill in details below';
-    document.getElementById('scanned-info').style.display='flex';
-    hideAllForms();
-    document.getElementById('np-code').value = code;
-    document.getElementById('add-product-form').classList.add('active');
-    document.getElementById('add-product-form').scrollIntoView({behavior:'smooth'});
-  }
-}
-
-function showMovementForm(type, p){
+  document.getElementById('scanned-info').style.display='flex';
+  const existing = meters.find(m=>m.MeterNumber===code);
   hideAllForms();
-  if(type==='in'){
-    const f = document.getElementById('form-in');
-    f.style.display='block';
-    document.getElementById('in-qty').value='';
-    document.getElementById('in-cost').value = p.CostPrice||'';
-    document.getElementById('in-sell').value = p.SellingPrice||'';
-    document.getElementById('in-supplier').value = p.SupplierName||'';
-    document.getElementById('in-invoice').value='';
-    document.getElementById('in-po').value='';
-    document.getElementById('in-date').value=today();
-    document.getElementById('in-notes').value='';
-  } else if(type==='out'){
-    const f = document.getElementById('form-out');
-    f.style.display='block';
-    document.getElementById('out-qty').value='';
-    document.getElementById('out-sell').value=p.SellingPrice||'';
-    document.getElementById('out-reason').value='';
-    document.getElementById('out-ref').value='';
-    document.getElementById('out-date').value=today();
-    document.getElementById('out-notes').value='';
+  if(currentMovementType==='in'){
+    if(existing){
+      document.getElementById('scanned-name-display').textContent='Already in system ('+existing.Status+') \u2014 '+existing.MeterType;
+      toast('This meter number already exists','error');
+      return;
+    }
+    document.getElementById('scanned-name-display').textContent='New meter \u2014 assign type & receive';
+    showInForm();
+  } else if(currentMovementType==='out'){
+    if(!existing){ document.getElementById('scanned-name-display').textContent='Unknown meter \u2014 receive it first'; toast('Meter not in system. Receive it first.','error'); return; }
+    if(existing.Status==='Dispatched'){ document.getElementById('scanned-name-display').textContent='Already dispatched to '+existing.CustomerName; toast('This meter is already installed','error'); return; }
+    document.getElementById('scanned-name-display').textContent=existing.MeterType+(existing.Phase?' \u00b7 '+existing.Phase:'');
+    showOutForm(existing);
   } else {
-    const f = document.getElementById('form-take');
-    f.style.display='block';
-    document.getElementById('take-system').value=p.CurrentStock||0;
-    document.getElementById('take-counted').value='';
-    document.getElementById('take-date').value=today();
-    document.getElementById('take-notes').value='';
-    updateVariance();
+    if(!existing){ document.getElementById('scanned-name-display').textContent='Unknown meter'; toast('Meter not in system','error'); return; }
+    document.getElementById('scanned-name-display').textContent=existing.MeterType+' \u00b7 '+existing.Status;
+    showTakeForm(existing);
   }
-  f = document.getElementById('form-'+type);
-  f && f.scrollIntoView({behavior:'smooth'});
 }
 
-function hideAllForms(){
-  ['in','out','take'].forEach(t=>{ const f=document.getElementById('form-'+t); if(f) f.style.display='none'; });
+function hideAllForms(){ ['in','out','take'].forEach(t=>{ const f=document.getElementById('form-'+t); if(f) f.style.display='none'; }); }
+
+function populateTypeDropdown(cat){
+  const sel = document.getElementById('in-type');
+  const types = meterTypes.filter(t=>t.Category===cat);
+  let html = '<option value="">Select meter type&hellip;</option>';
+  types.forEach(t=>{ const k=typeKey(t.Category,t.MeterType,t.Phase); html+='<option value="'+k.replace(/"/g,'')+'">'+t.MeterType+(t.Phase?' ('+t.Phase+')':'')+'</option>'; });
+  html += '<option value="__new__">+ New meter type&hellip;</option>';
+  sel.innerHTML = html;
+}
+function showInForm(){
+  const f=document.getElementById('form-in'); f.style.display='block';
+  document.getElementById('in-category').value='';
+  document.getElementById('in-type').innerHTML='<option value="">Select category first&hellip;</option>';
+  document.getElementById('in-newtype-wrap').style.display='none';
+  document.getElementById('in-newtype').value=''; document.getElementById('in-phase').value='';
+  document.getElementById('in-cost').value=''; document.getElementById('in-sell').value='';
+  document.getElementById('in-supplier').value=''; document.getElementById('in-invoice').value='';
+  document.getElementById('in-date').value=today(); document.getElementById('in-notes').value='';
+  f.scrollIntoView({behavior:'smooth'});
+}
+document.getElementById('in-category').addEventListener('change',function(){
+  if(this.value){ populateTypeDropdown(this.value); }
+  document.getElementById('in-phase-wrap').style.display = this.value==='Prepaid Electricity'?'block':'none';
+});
+document.getElementById('in-type').addEventListener('change',function(){
+  if(this.value==='__new__'){
+    document.getElementById('in-newtype-wrap').style.display='block';
+  } else {
+    document.getElementById('in-newtype-wrap').style.display='none';
+    const t = meterTypes.find(x=>typeKey(x.Category,x.MeterType,x.Phase)===this.value);
+    if(t){ document.getElementById('in-cost').value=t.CostPrice||''; document.getElementById('in-sell').value=t.SellingPrice||''; document.getElementById('in-supplier').value=t.SupplierName||''; }
+  }
+});
+
+function showOutForm(m){
+  const f=document.getElementById('form-out'); f.style.display='block';
+  document.getElementById('out-meter-info').innerHTML='<label class="form-label">Meter</label><div style="font-family:var(--mono);color:var(--blue)">'+m.MeterNumber+'</div><div style="font-size:0.8rem;color:var(--text2);margin-top:2px">'+m.Category+' \u00b7 '+m.MeterType+(m.Phase?' \u00b7 '+m.Phase:'')+'</div>';
+  document.getElementById('out-customer').value=''; document.getElementById('out-address').value='';
+  document.getElementById('out-invoice').value=''; document.getElementById('out-ref').value=''; document.getElementById('out-date').value=today();
+  document.getElementById('out-installer').value=currentUser; document.getElementById('out-notes').value='';
+  f.scrollIntoView({behavior:'smooth'});
+}
+function showTakeForm(m){
+  const f=document.getElementById('form-take'); f.style.display='block';
+  document.getElementById('take-meter-info').innerHTML='<label class="form-label">Meter</label><div style="font-family:var(--mono);color:var(--blue)">'+m.MeterNumber+'</div><div style="font-size:0.8rem;color:var(--text2);margin-top:2px">'+m.MeterType+' \u00b7 Status: '+m.Status+'</div>';
+  document.getElementById('take-date').value=today(); document.getElementById('take-notes').value='';
+  f.scrollIntoView({behavior:'smooth'});
 }
 
-// Movement type tabs
 document.querySelectorAll('.mvt-tab').forEach(btn=>{
   btn.addEventListener('click',function(){
     document.querySelectorAll('.mvt-tab').forEach(b=>b.classList.remove('active'));
-    this.classList.add('active');
-    currentMovementType = this.dataset.type;
-    const code = document.getElementById('scanned-code-display').textContent;
-    if(code){ const p=products.find(x=>x.ProductCode===code); if(p) showMovementForm(currentMovementType,p); }
+    this.classList.add('active'); currentMovementType=this.dataset.type;
+    const code=document.getElementById('scanned-code-display').textContent;
+    if(code) handleScannedCode(code);
   });
 });
+document.getElementById('btn-rescan').addEventListener('click',()=>{ document.getElementById('scanned-info').style.display='none'; hideAllForms(); startScanner(); });
+document.getElementById('btn-manual-entry').addEventListener('click',()=>{ const c=prompt('Enter meter number:'); if(c) handleScannedCode(c.trim()); });
 
-document.getElementById('btn-rescan').addEventListener('click',()=>{
-  document.getElementById('scanned-info').style.display='none';
-  hideAllForms();
-  document.getElementById('add-product-form').classList.remove('active');
-  startScanner();
-});
-
-document.getElementById('btn-manual-entry').addEventListener('click',()=>{
-  const code = prompt('Enter product code:');
-  if(code) handleScannedCode(code.trim());
-});
-
-// Variance calc
-function updateVariance(){
-  const sys=parseFloat(document.getElementById('take-system').value||0);
-  const cnt=parseFloat(document.getElementById('take-counted').value||'');
-  const el=document.getElementById('take-variance');
-  if(isNaN(cnt)){ el.textContent='—'; el.className='variance-display zero'; return; }
-  const v=round2(cnt-sys);
-  el.textContent=(v>=0?'+':'')+v; el.className='variance-display '+(v>0?'pos':v<0?'neg':'zero');
-}
-document.getElementById('take-counted').addEventListener('input',updateVariance);
-
-// ---- SUBMIT MOVEMENTS ----
+// ---- SUBMIT RECEIVE ----
 document.getElementById('btn-submit-in').addEventListener('click', async ()=>{
   const code=document.getElementById('scanned-code-display').textContent;
-  const p=products.find(x=>x.ProductCode===code); if(!p) return;
-  const qty=parseFloat(document.getElementById('in-qty').value);
+  const cat=document.getElementById('in-category').value;
+  const typeSel=document.getElementById('in-type').value;
   const cost=parseFloat(document.getElementById('in-cost').value||0);
   const sell=parseFloat(document.getElementById('in-sell').value||0);
-  const supplier=document.getElementById('in-supplier').value;
+  const supplier=document.getElementById('in-supplier').value.trim();
+  const invoice=document.getElementById('in-invoice').value.trim();
   const date=document.getElementById('in-date').value;
-  if(!qty||qty<=0||!supplier||!date){ toast('Fill in required fields','error'); return; }
-  const newQty=round2(parseFloat(p.CurrentStock||0)+qty);
-  const entry={ TransactionID:uid(), Timestamp:new Date().toISOString(), MovementType:'Stock In', ProductCode:code, ProductName:p.ProductName, Qty:qty, CostPrice:cost, SellingPrice:sell, TransactionValueCost:round2(qty*cost), TransactionValueSelling:round2(qty*sell), RunningBalance:newQty, SupplierName:supplier, InvoiceNumber:document.getElementById('in-invoice').value, PurchaseOrderNumber:document.getElementById('in-po').value, MovementDate:date, PerformedBy:currentUser, Notes:document.getElementById('in-notes').value };
+  if(!cat||!typeSel||!supplier||!date||!cost){ toast('Fill in required fields','error'); return; }
+  let typeName, phase;
+  if(typeSel==='__new__'){
+    typeName=document.getElementById('in-newtype').value.trim();
+    phase = cat==='Prepaid Electricity'?document.getElementById('in-phase').value:'';
+    if(!typeName||(cat==='Prepaid Electricity'&&!phase)){ toast('Enter new type name and phase','error'); return; }
+  } else {
+    const parts=typeSel.split('||'); typeName=parts[1]; phase=parts[2]||'';
+  }
   showLoader(true);
   try {
-    await recordMovement(entry);
-    await updateStock(code, newQty);
-    if(round2(cost)!==round2(p.CostPrice)){ await updateProductRow(code,{CostPrice:cost}); }
-    toast(`Stock In recorded. New balance: ${fmtQty(newQty)} ${p.UnitOfMeasure}`,'success');
+    const now=new Date().toISOString();
+    // create type if new
+    const tk=typeKey(cat,typeName,phase);
+    if(!meterTypes.find(t=>typeKey(t.Category,t.MeterType,t.Phase)===tk)){
+      await appendRow('MeterTypes',[cat,typeName,phase,cost,sell,0,supplier,now]);
+      meterTypes.push({Category:cat,MeterType:typeName,Phase:phase,CostPrice:cost,SellingPrice:sell,ReorderLevel:'0',SupplierName:supplier,DateCreated:now});
+    }
+    // create meter
+    await appendRow('Meters',[code,cat,typeName,phase,cost,sell,supplier,invoice,'In Stock','','',date,'',now,now,'']);
+    meters.push({MeterNumber:code,Category:cat,MeterType:typeName,Phase:phase,CostPrice:String(cost),SellingPrice:String(sell),SupplierName:supplier,InvoiceNumber:invoice,Status:'In Stock',CustomerName:'',InstallAddress:'',DateReceived:date,DateDispatched:'',DateCreated:now,DateUpdated:now,DispatchInvoice:''});
+    await appendRow('Ledger',[uid(),now,'Stock In',code,cat,typeName,phase,cost,sell,supplier,invoice,'','','',date,currentUser,document.getElementById('in-notes').value,'']);
+    toast('Meter received into stock','success');
     resetScanScreen();
-  } catch(e){ toast('Error: '+e.message,'error'); }
-  finally { showLoader(false); }
+  } catch(e){ toast('Error: '+e.message,'error'); } finally { showLoader(false); }
 });
 
+// ---- SUBMIT INSTALL ----
 document.getElementById('btn-submit-out').addEventListener('click', async ()=>{
   const code=document.getElementById('scanned-code-display').textContent;
-  const p=products.find(x=>x.ProductCode===code); if(!p) return;
-  const qty=parseFloat(document.getElementById('out-qty').value);
-  const sell=parseFloat(document.getElementById('out-sell').value||0);
-  const reason=document.getElementById('out-reason').value;
+  const m=meters.find(x=>x.MeterNumber===code); if(!m) return;
+  const customer=document.getElementById('out-customer').value.trim();
+  const address=document.getElementById('out-address').value.trim();
+  const clientInvoice=document.getElementById('out-invoice').value.trim();
+  const ref=document.getElementById('out-ref').value.trim();
   const date=document.getElementById('out-date').value;
-  if(!qty||qty<=0||!reason||!date){ toast('Fill in required fields','error'); return; }
-  const currentQty=parseFloat(p.CurrentStock||0);
-  if(qty>currentQty && !confirm(`Warning: This will result in negative stock (${round2(currentQty-qty)} ${p.UnitOfMeasure}). Continue?`)) return;
-  const newQty=round2(currentQty-qty);
-  const entry={ TransactionID:uid(), Timestamp:new Date().toISOString(), MovementType:'Stock Out', ProductCode:code, ProductName:p.ProductName, Qty:qty, CostPrice:parseFloat(p.CostPrice||0), SellingPrice:sell, TransactionValueCost:round2(qty*parseFloat(p.CostPrice||0)), TransactionValueSelling:round2(qty*sell), RunningBalance:newQty, DispatchReason:reason, Reference:document.getElementById('out-ref').value, MovementDate:date, PerformedBy:currentUser, Notes:document.getElementById('out-notes').value };
+  const installer=document.getElementById('out-installer').value.trim();
+  if(!customer||!address||!date||!clientInvoice){ toast('Customer, address, client invoice and date required','error'); return; }
   showLoader(true);
   try {
-    await recordMovement(entry);
-    await updateStock(code, newQty);
-    toast(`Stock Out recorded. New balance: ${fmtQty(newQty)} ${p.UnitOfMeasure}`,'success');
+    const now=new Date().toISOString();
+    const rowIdx = await findRowIndex('Meters',0,code);
+    Object.assign(m,{Status:'Dispatched',CustomerName:customer,InstallAddress:address,DateDispatched:date,DateUpdated:now,DispatchInvoice:clientInvoice});
+    await updateRow('Meters',rowIdx,m);
+    await appendRow('Ledger',[uid(),now,'Stock Out',code,m.Category,m.MeterType,m.Phase,m.CostPrice,m.SellingPrice,m.SupplierName,m.InvoiceNumber||'',customer,address,ref,date,currentUser,document.getElementById('out-notes').value,clientInvoice]);
+    showLoader(false);
+    generateInstallPDF(m,customer,address,ref,date,installer,clientInvoice);
+    toast('Installation recorded','success');
     resetScanScreen();
-  } catch(e){ toast('Error: '+e.message,'error'); }
-  finally { showLoader(false); }
+  } catch(e){ showLoader(false); toast('Error: '+e.message,'error'); }
 });
 
+// ---- SUBMIT VERIFY ----
 document.getElementById('btn-submit-take').addEventListener('click', async ()=>{
   const code=document.getElementById('scanned-code-display').textContent;
-  const p=products.find(x=>x.ProductCode===code); if(!p) return;
-  const counted=parseFloat(document.getElementById('take-counted').value);
+  const m=meters.find(x=>x.MeterNumber===code); if(!m) return;
   const date=document.getElementById('take-date').value;
-  if(isNaN(counted)||counted<0||!date){ toast('Fill in required fields','error'); return; }
-  const sys=parseFloat(p.CurrentStock||0);
-  const entry={ TransactionID:uid(), Timestamp:new Date().toISOString(), MovementType:'Stock Take', ProductCode:code, ProductName:p.ProductName, Qty:round2(counted-sys), CostPrice:parseFloat(p.CostPrice||0), SellingPrice:parseFloat(p.SellingPrice||0), TransactionValueCost:round2(counted*parseFloat(p.CostPrice||0)), TransactionValueSelling:round2(counted*parseFloat(p.SellingPrice||0)), RunningBalance:counted, MovementDate:date, PerformedBy:currentUser, Notes:document.getElementById('take-notes').value };
+  if(!date){ toast('Date required','error'); return; }
   showLoader(true);
   try {
-    await recordMovement(entry);
-    await updateStock(code, counted);
-    toast(`Stock Take recorded. Balance set to: ${fmtQty(counted)} ${p.UnitOfMeasure}`,'success');
+    const now=new Date().toISOString();
+    await appendRow('Ledger',[uid(),now,'Stock Take',code,m.Category,m.MeterType,m.Phase,m.CostPrice,m.SellingPrice,m.SupplierName,'','','','',date,currentUser,document.getElementById('take-notes').value||'Verified present','']);
+    toast('Meter verified present','success');
     resetScanScreen();
-  } catch(e){ toast('Error: '+e.message,'error'); }
-  finally { showLoader(false); }
+  } catch(e){ toast('Error: '+e.message,'error'); } finally { showLoader(false); }
 });
 
 function resetScanScreen(){
   document.getElementById('scanned-info').style.display='none';
   hideAllForms();
-  document.getElementById('add-product-form').classList.remove('active');
   document.getElementById('scanned-code-display').textContent='';
-  scannerActive=true;
+  renderDashboard();
   startScanner();
 }
 
-// ---- ADD PRODUCT ----
-document.getElementById('btn-save-product').addEventListener('click', async ()=>{
-  const name=document.getElementById('np-name').value.trim();
-  const code=document.getElementById('np-code').value.trim();
-  if(!name||!code){ toast('Product code and name required','error'); return; }
-  const p={ ProductCode:code, ProductName:name, Description:document.getElementById('np-desc').value, Category:document.getElementById('np-cat').value, UnitOfMeasure:document.getElementById('np-unit').value||'each', CostPrice:document.getElementById('np-cost').value||0, SellingPrice:document.getElementById('np-sell').value||0, ReorderLevel:document.getElementById('np-reorder').value||0, ReorderQty:document.getElementById('np-reorderqty').value||0, SupplierName:document.getElementById('np-supplier').value, SupplierCode:document.getElementById('np-supcode').value };
-  showLoader(true);
-  try {
-    await saveNewProduct(p);
-    toast('Product saved!','success');
-    document.getElementById('add-product-form').classList.remove('active');
-    showMovementForm(currentMovementType, products[products.length-1]);
-    document.getElementById('scanned-name-display').textContent=name;
-  } catch(e){ toast('Error saving product: '+e.message,'error'); }
-  finally { showLoader(false); }
-});
-
-document.getElementById('btn-cancel-addproduct').addEventListener('click',()=>{
-  document.getElementById('add-product-form').classList.remove('active');
-  document.getElementById('scanned-info').style.display='none';
-  startScanner();
-});
-
-// ---- EDIT MODAL ----
-function openEditModal(p){
-  document.getElementById('edit-code-hidden').value=p.ProductCode;
-  document.getElementById('edit-name').value=p.ProductName;
-  document.getElementById('edit-desc').value=p.Description||'';
-  document.getElementById('edit-cat').value=p.Category||'';
-  document.getElementById('edit-unit').value=p.UnitOfMeasure||'';
-  document.getElementById('edit-cost').value=p.CostPrice||'';
-  document.getElementById('edit-sell').value=p.SellingPrice||'';
-  document.getElementById('edit-reorder').value=p.ReorderLevel||'';
-  document.getElementById('edit-reorderqty').value=p.ReorderQty||'';
-  document.getElementById('edit-supplier').value=p.SupplierName||'';
-  document.getElementById('edit-supcode').value=p.SupplierCode||'';
-  document.getElementById('modal-edit').style.display='flex';
+// ---- PDF ----
+function generateInstallPDF(m,customer,address,ref,date,installer,clientInvoice){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({unit:'mm',format:'a4'});
+  const company = settings.CompanyName||'Inceku Energy Stewards';
+  const contact = settings.CompanyContact||'';
+  let y=20;
+  try { doc.addImage(LOGO_DATA,'PNG',20,y-5,22,22); } catch(e){}
+  doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.setTextColor(30,40,55);
+  doc.text(company,48,y+4);
+  doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(120,120,120);
+  if(contact) doc.text(contact,48,y+10);
+  y+=28;
+  doc.setDrawColor(61,125,196); doc.setLineWidth(0.8); doc.line(20,y,190,y); y+=12;
+  doc.setFont('helvetica','bold'); doc.setFontSize(15); doc.setTextColor(61,125,196);
+  doc.text('METER INSTALLATION CERTIFICATE',20,y); y+=12;
+  doc.setFontSize(10); doc.setTextColor(40,40,40);
+  const rows=[
+    ['Meter Number', m.MeterNumber],
+    ['Category', m.Category],
+    ['Meter Type', m.MeterType],
+    ['Phase', m.Phase||'N/A'],
+    ['Customer Name', customer],
+    ['Installation Address', address],
+    ['Client Invoice No.', clientInvoice||'-'],
+    ['Account / Reference', ref||'-'],
+    ['Installation Date', fmtDate(date)],
+    ['Installed By', installer||currentUser]
+  ];
+  rows.forEach(r=>{
+    doc.setFont('helvetica','bold'); doc.setTextColor(90,90,90); doc.text(r[0]+':',20,y);
+    doc.setFont('helvetica','normal'); doc.setTextColor(20,20,20);
+    const lines = doc.splitTextToSize(String(r[1]),110);
+    doc.text(lines,70,y); y += lines.length*6 + 2;
+  });
+  // Warranty box
+  y+=6;
+  doc.setFillColor(240,245,251); doc.setDrawColor(61,125,196); doc.setLineWidth(0.4);
+  doc.roundedRect(20,y,170,24,2,2,'FD');
+  doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(61,125,196);
+  doc.text('WARRANTY DETAILS',24,y+6);
+  doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(40,40,40);
+  doc.text('Date Received into Stock: '+fmtDate(m.DateReceived),24,y+13);
+  doc.text('Supplier: '+(m.SupplierName||'-'),24,y+19);
+  doc.text('Supplier Invoice No.: '+(m.InvoiceNumber||'-'),110,y+13);
+  doc.text('(Warranty runs from supplier invoice date)',110,y+19);
+  y+=34;
+  doc.setDrawColor(200,200,200); doc.setLineWidth(0.3);
+  doc.line(20,y,90,y); doc.line(110,y,180,y);
+  doc.setFontSize(8); doc.setTextColor(120,120,120);
+  doc.text('Customer Signature',20,y+5); doc.text('Technician Signature',110,y+5);
+  y+=20;
+  doc.setFontSize(7); doc.setTextColor(150,150,150);
+  doc.text('Generated '+new Date().toLocaleString('en-ZA')+' \u00b7 '+company,20,285);
+  const fname='Installation_'+m.MeterNumber+'_'+date+'.pdf';
+  doc.save(fname);
 }
-document.getElementById('btn-modal-close').addEventListener('click',()=>document.getElementById('modal-edit').style.display='none');
-document.getElementById('btn-save-edit').addEventListener('click', async ()=>{
-  const code=document.getElementById('edit-code-hidden').value;
-  const updates={ ProductName:document.getElementById('edit-name').value, Description:document.getElementById('edit-desc').value, Category:document.getElementById('edit-cat').value, UnitOfMeasure:document.getElementById('edit-unit').value, CostPrice:document.getElementById('edit-cost').value, SellingPrice:document.getElementById('edit-sell').value, ReorderLevel:document.getElementById('edit-reorder').value, ReorderQty:document.getElementById('edit-reorderqty').value, SupplierName:document.getElementById('edit-supplier').value, SupplierCode:document.getElementById('edit-supcode').value };
-  showLoader(true);
-  try {
-    await updateProductRow(code, updates);
-    document.getElementById('modal-edit').style.display='none';
-    toast('Product updated','success');
-    openDetail(code);
-  } catch(e){ toast('Error: '+e.message,'error'); }
-  finally { showLoader(false); }
-});
 
 // ---- REPORTS ----
-let currentReport='valuation', reportData=[];
-
+let currentReport='valuation', reportData=[], reportTitle='Stock Valuation', reportTotalsRow=null, reportColumns=null;
+const REPORT_TITLES = { valuation:'Stock on Hand Valuation', movements:'Stock Movement History', installed:'Installed Meters Register', margin:'Profit Margin Report', supplier:'Supplier Purchase History', lowstock:'Low Stock / Reorder Report' };
 document.querySelectorAll('.report-tab').forEach(btn=>{
   btn.addEventListener('click',function(){
     document.querySelectorAll('.report-tab').forEach(b=>b.classList.remove('active'));
-    this.classList.add('active');
-    currentReport=this.dataset.report;
-    document.getElementById('report-date-row').style.display = currentReport==='lowstock'?'none':'grid';
+    this.classList.add('active'); currentReport=this.dataset.report;
+    document.getElementById('report-date-row').style.display=(currentReport==='valuation'||currentReport==='lowstock')?'none':'grid';
     document.getElementById('report-output').innerHTML='';
   });
 });
-
-// Set default date range to current month
-const now=new Date();
-document.getElementById('report-from').value=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-01`;
+const nowd=new Date();
+document.getElementById('report-from').value=nowd.getFullYear()+'-'+String(nowd.getMonth()+1).padStart(2,'0')+'-01';
 document.getElementById('report-to').value=today();
-
-document.getElementById('btn-run-report').addEventListener('click', runReport);
+document.getElementById('btn-run-report').addEventListener('click',runReport);
 
 async function runReport(){
   showLoader(true);
   try {
-    const from=document.getElementById('report-from').value;
-    const to=document.getElementById('report-to').value;
-    await loadProducts();
-    if(currentReport==='valuation') renderValuationReport();
-    else if(currentReport==='movements'){ const l=await getSheetData('Ledger'); renderMovementsReport(l,from,to); }
-    else if(currentReport==='margin'){ const l=await getSheetData('Ledger'); renderMarginReport(l,from,to); }
-    else if(currentReport==='supplier'){ const l=await getSheetData('Ledger'); renderSupplierReport(l,from,to); }
-    else if(currentReport==='lowstock') renderLowStockReport();
-  } catch(e){ toast('Report error: '+e.message,'error'); }
-  finally { showLoader(false); }
+    await loadAll();
+    const from=document.getElementById('report-from').value, to=document.getElementById('report-to').value;
+    if(currentReport==='valuation') repValuation();
+    else if(currentReport==='lowstock') repLowStock();
+    else { const l=await getSheetData('Ledger');
+      if(currentReport==='movements') repMovements(l,from,to);
+      else if(currentReport==='installed') repInstalled(l,from,to);
+      else if(currentReport==='margin') repMargin(l,from,to);
+      else if(currentReport==='supplier') repSupplier(l,from,to);
+    }
+  } catch(e){ toast('Report error: '+e.message,'error'); } finally { showLoader(false); }
 }
-
-function renderValuationReport(){
-  let totalCost=0,totalSell=0,totalMargin=0;
-  const rows = products.map(p=>{
-    const qty=parseFloat(p.CurrentStock||0),cost=parseFloat(p.CostPrice||0),sell=parseFloat(p.SellingPrice||0);
-    const vc=round2(qty*cost),vs=round2(qty*sell),margin=round2(vs-vc),pct=vs>0?Math.round((1-vc/vs)*100)+'%':'—';
-    totalCost+=vc;totalSell+=vs;totalMargin+=margin;
-    const reorder=parseFloat(p.ReorderLevel||0);
-    const status=reorder<=0?'OK':qty<=0?'CRITICAL':qty<=reorder?'LOW':'OK';
-    return `<tr><td class="mono">${p.ProductCode}</td><td>${p.ProductName}</td><td>${p.Category||'—'}</td><td>${p.UnitOfMeasure||''}</td><td class="mono">${fmtQty(qty)}</td><td class="mono">${fmt(cost)}</td><td class="mono">${fmt(sell)}</td><td class="mono">${fmt(vc)}</td><td class="mono">${fmt(vs)}</td><td class="mono">${fmt(round2(sell-cost))}</td><td class="mono">${pct}</td><td>${p.ReorderLevel||0}</td><td style="color:${status==='OK'?'var(--green)':status==='LOW'?'var(--amber)':'var(--red)'}">${status}</td></tr>`;
+function tbl(headers,rows,totals){
+  let h='<div class="report-table-wrap"><table class="report-table"><thead><tr>'+headers.map(x=>'<th>'+x+'</th>').join('')+'</tr></thead><tbody>'+rows.join('');
+  if(totals) h+='<tr class="totals-row">'+totals+'</tr>';
+  return h+'</tbody></table></div>';
+}
+function repValuation(){
+  reportTitle = REPORT_TITLES.valuation;
+  const keys={};
+  meterTypes.forEach(t=>{ keys[typeKey(t.Category,t.MeterType,t.Phase)]={cat:t.Category,type:t.MeterType,phase:t.Phase,reorder:parseFloat(t.ReorderLevel||0),cost:parseFloat(t.CostPrice||0),sell:parseFloat(t.SellingPrice||0)}; });
+  meters.forEach(m=>{ const k=typeKey(m.Category,m.MeterType,m.Phase); if(!keys[k]) keys[k]={cat:m.Category,type:m.MeterType,phase:m.Phase,reorder:0,cost:parseFloat(m.CostPrice||0),sell:parseFloat(m.SellingPrice||0)}; });
+  let tc=0,ts=0; reportData=[];
+  const rows=Object.values(keys).map(v=>{
+    const inStk=metersForType(v.cat,v.type,v.phase).filter(m=>m.Status==='In Stock').length;
+    const cval=inStk*v.cost, sval=inStk*v.sell; tc+=cval; ts+=sval;
+    const pct=v.sell>0&&v.cost>0?Math.round((1-v.cost/v.sell)*100)+'%':'-';
+    reportData.push({Category:v.cat,MeterType:v.type,Phase:v.phase||'-',InStock:inStk,CostPrice:round2(v.cost),SellingPrice:round2(v.sell),ValueCost:round2(cval),ValueSell:round2(sval),Margin:pct});
+    return '<tr><td>'+v.cat+'</td><td>'+v.type+'</td><td>'+(v.phase||'-')+'</td><td class="mono">'+inStk+'</td><td class="mono">'+fmt(v.cost)+'</td><td class="mono">'+fmt(v.sell)+'</td><td class="mono">'+fmt(cval)+'</td><td class="mono">'+fmt(sval)+'</td><td class="mono">'+pct+'</td></tr>';
   });
-  reportData = products.map(p=>({ Code:p.ProductCode,Name:p.ProductName,Category:p.Category,Unit:p.UnitOfMeasure,Qty:p.CurrentStock,CostPrice:p.CostPrice,SellingPrice:p.SellingPrice,StockValueCost:round2(parseFloat(p.CurrentStock||0)*parseFloat(p.CostPrice||0)),StockValueSelling:round2(parseFloat(p.CurrentStock||0)*parseFloat(p.SellingPrice||0)) }));
-  document.getElementById('report-output').innerHTML=`<div class="report-table-wrap"><table class="report-table"><thead><tr><th>Code</th><th>Name</th><th>Category</th><th>Unit</th><th>Qty</th><th>Cost</th><th>Sell</th><th>Val(Cost)</th><th>Val(Sell)</th><th>Margin/Unit</th><th>Margin%</th><th>Reorder</th><th>Status</th></tr></thead><tbody>${rows.join('')}<tr class="totals-row"><td colspan="7">TOTALS</td><td class="mono">${fmt(totalCost)}</td><td class="mono">${fmt(totalSell)}</td><td class="mono">${fmt(round2(totalSell-totalCost))}</td><td colspan="3"></td></tr></tbody></table></div>`;
+  reportColumns=['Category','Type','Phase','In Stock','Cost','Sell','Val(Cost)','Val(Sell)','Margin'];
+  reportTotalsRow=['TOTALS','','','','','',fmt(tc),fmt(ts),''];
+  document.getElementById('report-output').innerHTML=tbl(reportColumns,rows,'<td colspan="6">TOTALS</td><td class="mono">'+fmt(tc)+'</td><td class="mono">'+fmt(ts)+'</td><td></td>');
 }
-
-function renderMovementsReport(ledger,from,to){
-  const filtered=ledger.filter(e=>e.MovementDate>=from&&e.MovementDate<=to);
-  let unitsIn=0,unitsOut=0,costIn=0,costOut=0;
-  const rows=filtered.map(e=>{
-    if(e.MovementType==='Stock In'){unitsIn+=parseFloat(e.Qty||0);costIn+=parseFloat(e.TransactionValueCost||0);}
-    if(e.MovementType==='Stock Out'){unitsOut+=parseFloat(e.Qty||0);costOut+=parseFloat(e.TransactionValueCost||0);}
-    return `<tr><td>${fmtDate(e.MovementDate)}</td><td class="mono">${e.ProductCode}</td><td>${e.ProductName}</td><td>${e.MovementType}</td><td class="mono">${fmtQty(e.Qty)}</td><td class="mono">${fmt(e.CostPrice)}</td><td class="mono">${fmt(e.SellingPrice)}</td><td class="mono">${fmt(e.TransactionValueCost)}</td><td class="mono">${fmt(e.TransactionValueSelling)}</td><td class="mono">${fmtQty(e.RunningBalance)}</td><td>${e.InvoiceNumber||e.Reference||'—'}</td><td>${e.PerformedBy}</td><td>${e.Notes||''}</td></tr>`;
+function repMovements(l,from,to){
+  reportTitle = REPORT_TITLES.movements;
+  const f=l.filter(e=>e.MovementDate>=from&&e.MovementDate<=to);
+  let cin=0,cout=0,ctk=0; reportData=[];
+  const rows=f.map(e=>{ if(e.MovementType==='Stock In')cin++; else if(e.MovementType==='Stock Out')cout++; else ctk++;
+    const mv = e.MovementType==='Stock In'?'Received':e.MovementType==='Stock Out'?'Installed':'Verified';
+    reportData.push({Date:fmtDate(e.MovementDate),MeterNumber:e.MeterNumber,MeterType:e.MeterType,Movement:mv,Party:(e.CustomerName||e.SupplierName||'-'),Detail:(e.InstallAddress||e.InvoiceNumber||'-'),User:e.PerformedBy});
+    return '<tr><td>'+fmtDate(e.MovementDate)+'</td><td class="mono">'+e.MeterNumber+'</td><td>'+e.MeterType+'</td><td>'+mv+'</td><td>'+(e.CustomerName||e.SupplierName||'-')+'</td><td>'+(e.InstallAddress||e.InvoiceNumber||'-')+'</td><td>'+e.PerformedBy+'</td></tr>';
   });
-  reportData=filtered;
-  document.getElementById('report-output').innerHTML=`<div class="report-table-wrap"><table class="report-table"><thead><tr><th>Date</th><th>Code</th><th>Name</th><th>Type</th><th>Qty</th><th>Cost/U</th><th>Sell/U</th><th>Val(Cost)</th><th>Val(Sell)</th><th>Balance</th><th>Ref</th><th>User</th><th>Notes</th></tr></thead><tbody>${rows.join('')}<tr class="totals-row"><td colspan="4">TOTALS</td><td class="mono">In:${fmtQty(unitsIn)} Out:${fmtQty(unitsOut)}</td><td colspan="2"></td><td class="mono">In:${fmt(costIn)}</td><td class="mono">Out:${fmt(costOut)}</td><td colspan="4"></td></tr></tbody></table></div>`;
+  reportColumns=['Date','Meter No.','Type','Movement','Customer/Supplier','Address/Invoice','User'];
+  reportTotalsRow=['TOTALS','','','Received: '+cin+'  Installed: '+cout+'  Verified: '+ctk,'','',''];
+  document.getElementById('report-output').innerHTML=tbl(reportColumns,rows,'<td colspan="3">TOTALS</td><td class="mono">Rec:'+cin+' Inst:'+cout+' Ver:'+ctk+'</td><td colspan="3"></td>');
 }
-
-function renderMarginReport(ledger,from,to){
-  const sales=ledger.filter(e=>e.MovementType==='Stock Out'&&e.MovementDate>=from&&e.MovementDate<=to);
+function repInstalled(l,from,to){
+  reportTitle = REPORT_TITLES.installed;
+  const f=l.filter(e=>e.MovementType==='Stock Out'&&e.MovementDate>=from&&e.MovementDate<=to); reportData=[];
+  const rows=f.map(e=>{
+    const mr = meters.find(x=>x.MeterNumber===e.MeterNumber) || {};
+    const recvDate = fmtDate(mr.DateReceived||'');
+    const supInv = mr.InvoiceNumber||'-';
+    const cliInv = e.DispatchInvoice||mr.DispatchInvoice||'-';
+    reportData.push({InstallDate:fmtDate(e.MovementDate),MeterNumber:e.MeterNumber,Category:e.Category,MeterType:e.MeterType,Phase:e.Phase||'-',Customer:e.CustomerName,Address:e.InstallAddress,ClientInvoice:cliInv,ReceivedDate:recvDate,SupplierInvoice:supInv,InstalledBy:e.PerformedBy});
+    return '<tr><td>'+fmtDate(e.MovementDate)+'</td><td class="mono">'+e.MeterNumber+'</td><td>'+e.MeterType+'</td><td>'+e.CustomerName+'</td><td>'+e.InstallAddress+'</td><td class="mono">'+cliInv+'</td><td>'+recvDate+'</td><td class="mono">'+supInv+'</td></tr>';
+  });
+  reportColumns=['Install Date','Meter No.','Type','Customer','Address','Client Inv','Recv Date','Supplier Inv'];
+  reportTotalsRow=['TOTAL INSTALLED: '+f.length,'','','','','','',''];
+  document.getElementById('report-output').innerHTML=tbl(reportColumns,rows,'<td colspan="8">TOTAL INSTALLED: '+f.length+'</td>');
+}
+function repMargin(l,from,to){
+  reportTitle = REPORT_TITLES.margin;
+  const sales=l.filter(e=>e.MovementType==='Stock Out'&&e.MovementDate>=from&&e.MovementDate<=to);
   const map={};
-  sales.forEach(e=>{
-    const p=products.find(x=>x.ProductCode===e.ProductCode);
-    if(!map[e.ProductCode]) map[e.ProductCode]={code:e.ProductCode,name:e.ProductName,cat:p?.Category||'',units:0,totalCost:0,totalSell:0};
-    map[e.ProductCode].units+=parseFloat(e.Qty||0);
-    map[e.ProductCode].totalCost+=parseFloat(e.TransactionValueCost||0);
-    map[e.ProductCode].totalSell+=parseFloat(e.TransactionValueSelling||0);
+  sales.forEach(e=>{ const k=e.Category+' \u00b7 '+e.MeterType+(e.Phase?' ('+e.Phase+')':''); if(!map[k]) map[k]={k,units:0,tc:0,ts:0}; map[k].units++; map[k].tc+=parseFloat(e.CostPrice||0); map[k].ts+=parseFloat(e.SellingPrice||0); });
+  let gp=0; reportData=[];
+  const rows=Object.values(map).map(it=>{ const p=round2(it.ts-it.tc); gp+=p; const pct=it.ts>0?Math.round((1-it.tc/it.ts)*100)+'%':'-';
+    reportData.push({Type:it.k,UnitsInstalled:it.units,TotalCost:round2(it.tc),TotalSell:round2(it.ts),GrossProfit:p,Margin:pct});
+    return '<tr><td>'+it.k+'</td><td class="mono">'+it.units+'</td><td class="mono">'+fmt(it.tc)+'</td><td class="mono">'+fmt(it.ts)+'</td><td class="mono">'+fmt(p)+'</td><td class="mono">'+pct+'</td></tr>';
   });
-  const items=Object.values(map).sort((a,b)=>(b.totalSell-b.totalCost)/Math.max(b.totalSell,1)-(a.totalSell-a.totalCost)/Math.max(a.totalSell,1));
-  let grandProfit=0;
-  const rows=items.map(it=>{
-    const avgCost=it.units?round2(it.totalCost/it.units):0, avgSell=it.units?round2(it.totalSell/it.units):0;
-    const gp=round2(it.totalSell-it.totalCost), pct=it.totalSell>0?Math.round((1-it.totalCost/it.totalSell)*100)+'%':'—';
-    grandProfit+=gp;
-    return `<tr><td class="mono">${it.code}</td><td>${it.name}</td><td>${it.cat||'—'}</td><td class="mono">${fmtQty(it.units)}</td><td class="mono">${fmt(avgCost)}</td><td class="mono">${fmt(avgSell)}</td><td class="mono">${fmt(round2(avgSell-avgCost))}</td><td class="mono">${fmt(gp)}</td><td class="mono">${pct}</td></tr>`;
+  reportColumns=['Type','Installed','Total Cost','Total Sell','Gross Profit','Margin'];
+  reportTotalsRow=['TOTAL GROSS PROFIT','','','',fmt(gp),''];
+  document.getElementById('report-output').innerHTML=tbl(reportColumns,rows,'<td colspan="4">TOTAL GROSS PROFIT</td><td class="mono">'+fmt(gp)+'</td><td></td>');
+}
+function repSupplier(l,from,to){
+  reportTitle = REPORT_TITLES.supplier;
+  const p=l.filter(e=>e.MovementType==='Stock In'&&e.MovementDate>=from&&e.MovementDate<=to);
+  const sup={}; p.forEach(e=>{ const s=e.SupplierName||'Unknown'; if(!sup[s])sup[s]=[]; sup[s].push(e); });
+  let grand=0,all=''; reportData=[];
+  Object.entries(sup).forEach(([s,entries])=>{ let st=0; entries.forEach(e=>{ const c=parseFloat(e.CostPrice||0); st+=c;
+      reportData.push({Date:fmtDate(e.MovementDate),Supplier:s,Invoice:(e.InvoiceNumber||'-'),MeterNumber:e.MeterNumber,MeterType:e.MeterType,Cost:round2(c)});
+      all+='<tr><td>'+fmtDate(e.MovementDate)+'</td><td>'+s+'</td><td>'+(e.InvoiceNumber||'-')+'</td><td class="mono">'+e.MeterNumber+'</td><td>'+e.MeterType+'</td><td class="mono">'+fmt(c)+'</td></tr>'; });
+    grand+=st; all+='<tr class="totals-row"><td colspan="5">'+s+' \u2014 '+entries.length+' meters</td><td class="mono">'+fmt(st)+'</td></tr>';
   });
-  reportData=items;
-  document.getElementById('report-output').innerHTML=`<div class="report-table-wrap"><table class="report-table"><thead><tr><th>Code</th><th>Name</th><th>Category</th><th>Units Sold</th><th>Avg Cost</th><th>Avg Sell</th><th>GP/Unit</th><th>Total GP</th><th>Margin%</th></tr></thead><tbody>${rows.join('')}<tr class="totals-row"><td colspan="7">TOTAL GROSS PROFIT</td><td class="mono">${fmt(grandProfit)}</td><td></td></tr></tbody></table></div>`;
+  reportColumns=['Date','Supplier','Invoice','Meter No.','Type','Cost'];
+  reportTotalsRow=['GRAND TOTAL','','','','',fmt(grand)];
+  document.getElementById('report-output').innerHTML=tbl(reportColumns,[all],'<td colspan="5">GRAND TOTAL</td><td class="mono">'+fmt(grand)+'</td>');
+}
+function repLowStock(){
+  reportTitle = REPORT_TITLES.lowstock;
+  reportData=[]; const rows=[];
+  meterTypes.forEach(t=>{ const rl=parseFloat(t.ReorderLevel||0); if(rl<=0) return;
+    const inStk=metersForType(t.Category,t.MeterType,t.Phase).filter(m=>m.Status==='In Stock').length;
+    if(inStk<=rl){ reportData.push({Category:t.Category,MeterType:t.MeterType,Phase:t.Phase||'-',InStock:inStk,ReorderLevel:rl,Supplier:(t.SupplierName||'-')});
+      rows.push('<tr><td>'+t.Category+'</td><td>'+t.MeterType+'</td><td>'+(t.Phase||'-')+'</td><td class="mono">'+inStk+'</td><td class="mono">'+rl+'</td><td>'+(t.SupplierName||'-')+'</td></tr>');
+    }
+  });
+  reportColumns=['Category','Type','Phase','In Stock','Reorder Lvl','Supplier'];
+  reportTotalsRow=null;
+  document.getElementById('report-output').innerHTML = rows.length?tbl(reportColumns,rows,null):'<div class="empty-state">No meter types below reorder level. (Set reorder levels per type in the spreadsheet.)</div>';
 }
 
-function renderSupplierReport(ledger,from,to){
-  const purchases=ledger.filter(e=>e.MovementType==='Stock In'&&e.MovementDate>=from&&e.MovementDate<=to);
-  const sup={};
-  purchases.forEach(e=>{
-    const s=e.SupplierName||'Unknown';
-    if(!sup[s]) sup[s]=[];
-    sup[s].push(e);
+function generateReportPDF(){
+  if(!reportData.length){ toast('Run a report first','error'); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({unit:'mm',format:'a4',orientation:'landscape'});
+  const company = settings.CompanyName||'Inceku Energy Stewards';
+  const contact = settings.CompanyContact||'';
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  try { doc.addImage(LOGO_DATA,'PNG',14,9,18,18); } catch(e){}
+  doc.setFont('helvetica','bold'); doc.setFontSize(15); doc.setTextColor(30,40,55);
+  doc.text(company,36,17);
+  doc.setFont('helvetica','bold'); doc.setFontSize(12); doc.setTextColor(61,125,196);
+  doc.text(reportTitle,36,24);
+  if(contact){ doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(120,120,120); doc.text(contact,36,29); }
+  doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(110,110,110);
+  doc.text('Generated: '+new Date().toLocaleString('en-ZA'),pageW-14,13,{align:'right'});
+  if(currentReport!=='valuation'&&currentReport!=='lowstock'){
+    const from=document.getElementById('report-from').value, to=document.getElementById('report-to').value;
+    doc.text('Period: '+fmtDate(from)+'  to  '+fmtDate(to),pageW-14,18,{align:'right'});
+  }
+  doc.setDrawColor(61,125,196); doc.setLineWidth(0.6); doc.line(14,32,pageW-14,32);
+
+  const columns = reportColumns || Object.keys(reportData[0]);
+  const dataKeys = Object.keys(reportData[0]);
+  const moneyKeys = dataKeys.filter(c=>/Price|Value|Cost|Sell|Profit/i.test(c));
+  const body = reportData.map(r=>dataKeys.map(c=> moneyKeys.includes(c)? fmt(r[c]) : String(r[c]==null?'':r[c]) ));
+  const foot = reportTotalsRow ? [reportTotalsRow] : undefined;
+
+  doc.autoTable({
+    startY:36, head:[columns], body:body, foot:foot, theme:'striped',
+    headStyles:{ fillColor:[36,48,68], textColor:[255,255,255], fontSize:8, fontStyle:'bold' },
+    bodyStyles:{ fontSize:7.5, textColor:[40,40,40] },
+    footStyles:{ fillColor:[225,233,245], textColor:[20,30,45], fontStyle:'bold', fontSize:8 },
+    alternateRowStyles:{ fillColor:[247,250,253] },
+    margin:{left:14,right:14},
+    didDrawPage: function(data){
+      const pg = doc.internal.getNumberOfPages();
+      doc.setFontSize(7); doc.setTextColor(150,150,150);
+      doc.text(company+'  \u00b7  '+reportTitle,14,pageH-7);
+      doc.text('Page '+data.pageNumber+' of '+pg,pageW-14,pageH-7,{align:'right'});
+    }
   });
-  let grandTotal=0, allRows='';
-  Object.entries(sup).forEach(([s,entries])=>{
-    let subTotal=0, subQty=0;
-    const rows=entries.map(e=>{
-      const tv=parseFloat(e.TransactionValueCost||0);
-      subTotal+=tv; subQty+=parseFloat(e.Qty||0);
-      return `<tr><td>${fmtDate(e.MovementDate)}</td><td>${s}</td><td>${e.InvoiceNumber||'—'}</td><td>${e.PurchaseOrderNumber||'—'}</td><td class="mono">${e.ProductCode}</td><td>${e.ProductName}</td><td class="mono">${fmtQty(e.Qty)}</td><td class="mono">${fmt(e.CostPrice)}</td><td class="mono">${fmt(tv)}</td></tr>`;
-    });
-    grandTotal+=subTotal;
-    allRows+=rows.join('');
-    allRows+=`<tr class="totals-row"><td colspan="6">${s} — subtotal</td><td class="mono">${fmtQty(subQty)}</td><td></td><td class="mono">${fmt(subTotal)}</td></tr>`;
-  });
-  reportData=purchases;
-  document.getElementById('report-output').innerHTML=`<div class="report-table-wrap"><table class="report-table"><thead><tr><th>Date</th><th>Supplier</th><th>Invoice</th><th>PO</th><th>Code</th><th>Product</th><th>Qty</th><th>Unit Cost</th><th>Total</th></tr></thead><tbody>${allRows}<tr class="totals-row"><td colspan="8">GRAND TOTAL</td><td class="mono">${fmt(grandTotal)}</td></tr></tbody></table></div>`;
+  doc.save(reportTitle.replace(/[^a-z0-9]+/gi,'_')+'_'+today()+'.pdf');
 }
 
-function renderLowStockReport(){
-  const low=products.filter(p=>{ const qty=parseFloat(p.CurrentStock||0),rl=parseFloat(p.ReorderLevel||0); return rl>0&&qty<=rl; });
-  const rows=low.map(p=>{
-    const qty=parseFloat(p.CurrentStock||0),rl=parseFloat(p.ReorderLevel||0),rq=parseFloat(p.ReorderQty||0);
-    const shortfall=Math.max(0,round2(rq-qty));
-    return `<tr><td class="mono">${p.ProductCode}</td><td>${p.ProductName}</td><td>${p.SupplierName||'—'}</td><td>${p.SupplierCode||'—'}</td><td class="mono">${fmtQty(qty)}</td><td class="mono">${rl}</td><td class="mono">${rq}</td><td class="mono">${shortfall}</td><td class="mono">${fmt(p.CostPrice)}</td><td class="mono">${fmt(round2(shortfall*parseFloat(p.CostPrice||0)))}</td></tr>`;
-  });
-  reportData=low;
-  document.getElementById('report-output').innerHTML=`<div class="report-table-wrap"><table class="report-table"><thead><tr><th>Code</th><th>Name</th><th>Supplier</th><th>Sup Code</th><th>Current</th><th>Reorder Lvl</th><th>Reorder Qty</th><th>Shortfall</th><th>Unit Cost</th><th>Est. Cost</th></tr></thead><tbody>${rows.join('')}</tbody></table></div>`;
-}
-
-// ---- EXPORT ----
+document.getElementById('btn-export-pdf').addEventListener('click',generateReportPDF);
 document.getElementById('btn-export-csv').addEventListener('click',()=>{
   if(!reportData.length){ toast('Run a report first','error'); return; }
   const keys=Object.keys(reportData[0]);
-  const csv='\uFEFF'+keys.join(',')+'\n'+reportData.map(r=>keys.map(k=>'"'+(r[k]||'').toString().replace(/"/g,'""')+'"').join(',')).join('\n');
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'}));
-  a.download=currentReport+'_'+today()+'.csv'; a.click();
+  const csv='\uFEFF'+keys.join(',')+'\n'+reportData.map(r=>keys.map(k=>'"'+String(r[k]||'').replace(/"/g,'""')+'"').join(',')).join('\n');
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8'})); a.download=currentReport+'_'+today()+'.csv'; a.click();
 });
-
 document.getElementById('btn-export-xlsx').addEventListener('click',()=>{
   if(!reportData.length){ toast('Run a report first','error'); return; }
-  const ws=XLSX.utils.json_to_sheet(reportData);
-  const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'Report');
-  XLSX.writeFile(wb,currentReport+'_'+today()+'.xlsx');
+  const ws=XLSX.utils.json_to_sheet(reportData); const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'Report'); XLSX.writeFile(wb,currentReport+'_'+today()+'.xlsx');
 });
 
 // ---- SETTINGS ----
 document.getElementById('btn-save-settings').addEventListener('click', async ()=>{
-  const company=document.getElementById('setting-company').value;
-  showLoader(true);
-  try { await sheetsRequest({method:'POST',url:`https://sheets.googleapis.com/v4/spreadsheets/${SPREADSHEET_ID}/values/Settings!A1:append?valueInputOption=USER_ENTERED`,body:{values:[['CompanyName',company]]}}); toast('Saved','success'); } catch(e){ toast('Error: '+e.message,'error'); } finally { showLoader(false); }
-});
-
-document.getElementById('btn-export-all').addEventListener('click', async ()=>{
   showLoader(true);
   try {
-    const p=await getSheetData('Products'), l=await getSheetData('Ledger');
-    const data={products:p,ledger:l,exportDate:new Date().toISOString()};
-    const a=document.createElement('a');
-    a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));
-    a.download='wms-backup-'+today()+'.json'; a.click();
+    const c=document.getElementById('setting-company').value, ct=document.getElementById('setting-contact').value;
+    const idxC=await findRowIndex('Settings',0,'CompanyName');
+    if(idxC>0) await sheetsRequest({method:'PUT',url:'https://sheets.googleapis.com/v4/spreadsheets/'+SPREADSHEET_ID+'/values/Settings!B'+idxC+'?valueInputOption=USER_ENTERED',body:{values:[[c]]}});
+    else await appendRow('Settings',['CompanyName',c]);
+    const idxCt=await findRowIndex('Settings',0,'CompanyContact');
+    if(idxCt>0) await sheetsRequest({method:'PUT',url:'https://sheets.googleapis.com/v4/spreadsheets/'+SPREADSHEET_ID+'/values/Settings!B'+idxCt+'?valueInputOption=USER_ENTERED',body:{values:[[ct]]}});
+    else await appendRow('Settings',['CompanyContact',ct]);
+    settings.CompanyName=c; settings.CompanyContact=ct;
+    toast('Saved','success');
+  } catch(e){ toast('Error: '+e.message,'error'); } finally { showLoader(false); }
+});
+document.getElementById('btn-export-all').addEventListener('click', async ()=>{
+  showLoader(true);
+  try { const data={meters:await getSheetData('Meters'),meterTypes:await getSheetData('MeterTypes'),ledger:await getSheetData('Ledger'),exportDate:new Date().toISOString()};
+    const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'})); a.download='inceku-meters-backup-'+today()+'.json'; a.click();
   } catch(e){ toast('Error: '+e.message,'error'); } finally { showLoader(false); }
 });
 
-// Sign out
-['btn-signout','btn-signout2'].forEach(id=>{
-  document.getElementById(id).addEventListener('click',()=>{
-    google.accounts.oauth2.revoke(accessToken,()=>{});
-    accessToken=null; currentUser=null; products=[];
-    document.getElementById('app').classList.remove('active');
-    document.getElementById('auth-screen').style.display='flex';
-    stopScanner();
-  });
-});
+['btn-signout','btn-signout2'].forEach(id=>document.getElementById(id).addEventListener('click',()=>{
+  if(accessToken) google.accounts.oauth2.revoke(accessToken,()=>{});
+  accessToken=null; currentUser=null; meters=[]; meterTypes=[];
+  document.getElementById('app').classList.remove('active'); document.getElementById('auth-screen').style.display='flex'; stopScanner();
+}));
 
-// ---- NAVIGATION ----
 function showScreen(name){
   document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
   document.getElementById('screen-'+name).classList.add('active');
-  document.querySelectorAll('.nav-item').forEach(b=>{ b.classList.toggle('active', b.dataset.screen===name); });
-  if(name==='scan'&&!scannerActive){ startScanner(); }
-  else if(name!=='scan'){ stopScanner(); }
-  if(name==='dashboard') loadDashboard();
+  document.querySelectorAll('.nav-item').forEach(b=>b.classList.toggle('active',b.dataset.screen===name));
+  if(name==='scan'&&!scannerActive) startScanner(); else if(name!=='scan') stopScanner();
+  if(name==='dashboard') renderDashboard();
 }
+document.querySelectorAll('.nav-item').forEach(btn=>btn.addEventListener('click',function(){ showScreen(this.dataset.screen); }));
 
-document.querySelectorAll('.nav-item').forEach(btn=>{
-  btn.addEventListener('click',function(){ showScreen(this.dataset.screen); });
-});
-
-// ---- BOOT ----
-window.addEventListener('load',()=>{
-  gapi.load('client', ()=>{ initGoogleAuth(); });
-});
+window.addEventListener('load',()=>{ gapi.load('client',()=>{ initGoogleAuth(); }); });
 </script>
 </body>
 </html>

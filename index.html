@@ -187,6 +187,38 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
 .modal-title{font-size:1rem;font-weight:700;}
 .modal-close{background:none;border:none;color:var(--text2);font-size:1.5rem;cursor:pointer;}
 .modal-body{padding:16px;}
+
+/* Typeahead (installer search) */
+.typeahead{position:relative;}
+.ta-results{position:absolute;left:0;right:0;top:100%;z-index:60;background:var(--bg2);border:1px solid var(--border);border-radius:0 0 var(--radius-sm) var(--radius-sm);max-height:220px;overflow-y:auto;box-shadow:0 6px 18px rgba(20,40,70,0.12);display:none;}
+.ta-results.show{display:block;}
+.ta-item{padding:11px 13px;font-size:0.92rem;cursor:pointer;border-bottom:1px solid var(--border);}
+.ta-item:last-child{border-bottom:none;}
+.ta-item.active,.ta-item:hover{background:var(--blue-soft);}
+.ta-item .ta-sub{font-size:0.74rem;color:var(--text3);margin-top:2px;}
+.ta-empty{padding:11px 13px;font-size:0.85rem;color:var(--text3);}
+
+/* Photo slots (manual install) */
+.ph-slot{border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;margin-top:9px;}
+.ph-slot.done{border-color:var(--green);background:var(--green-soft);}
+.ph-slot-label{font-size:0.78rem;font-weight:600;margin-bottom:7px;display:flex;align-items:center;justify-content:space-between;}
+.ph-slot-label .tick{color:var(--green);font-weight:700;display:none;}
+.ph-slot.done .tick{display:inline;}
+.ph-slot input[type=file]{width:100%;font-size:0.82rem;}
+.ph-prev{margin-top:8px;}
+.ph-thumb{position:relative;display:inline-block;max-width:200px;border-radius:8px;overflow:hidden;border:1px solid var(--border);}
+.ph-thumb img{width:100%;display:block;}
+.ph-thumb .stamp{position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,.6);color:#fff;font-size:.6rem;padding:3px 5px;}
+
+/* Inline manual meter entry on scan screen */
+#manual-entry-wrap{margin-bottom:14px;}
+
+/* Per-meter client price in install basket */
+.basket-price{display:flex;align-items:center;gap:6px;margin-top:6px;}
+.basket-price label{font-size:0.68rem;color:var(--text3);text-transform:uppercase;letter-spacing:0.04em;}
+.basket-price input{width:110px;background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:6px 9px;font-family:var(--mono);font-size:0.85rem;color:var(--text);outline:none;}
+.basket-price input.below-cost{border-color:var(--red);color:var(--red);background:var(--red-soft);}
+.basket-price .cost-hint{font-size:0.66rem;color:var(--text3);}
 </style>
 </head>
 <body>
@@ -213,6 +245,12 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
     <div class="form-group"><label class="form-label">Password</label><input type="password" class="form-input" id="login-password" autocomplete="current-password"></div>
     <button class="btn btn-primary" id="btn-login">Sign In</button>
     <div id="login-error" style="color:var(--red);font-size:0.85rem;text-align:center;display:none;margin-top:12px"></div>
+    <div style="text-align:center;margin-top:14px"><a href="#" id="link-forgot" style="color:var(--blue);font-size:0.85rem;text-decoration:none">Forgot password?</a></div>
+    <div id="reset-wrap" style="display:none;margin-top:12px">
+      <div class="form-group"><label class="form-label">Email for reset</label><input type="email" class="form-input" id="reset-email" autocomplete="username"></div>
+      <button class="btn btn-secondary" id="btn-reset">Send reset email</button>
+      <div id="reset-msg" style="font-size:0.85rem;text-align:center;margin-top:10px;color:var(--text2);display:none"></div>
+    </div>
   </div>
 </div>
 <!-- CREATE ACCOUNT -->
@@ -269,6 +307,10 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
           <div class="scan-overlay"><div class="scan-frame"></div></div>
         </div>
         <button class="btn-manual" id="btn-manual-entry">Enter meter number manually</button>
+          <div id="manual-entry-wrap" style="display:none">
+            <div class="form-group" style="margin-bottom:8px"><label class="form-label">Enter meter number</label><input type="text" class="form-input" id="manual-meter-input" placeholder="Type or paste meter number" autocomplete="off"></div>
+            <button class="btn btn-primary" id="btn-manual-go">Use this meter number</button>
+          </div>
 
         <div id="scanned-info" style="display:none" class="scanned-result">
           <div><div class="scanned-code" id="scanned-code-display"></div><div class="scanned-name" id="scanned-name-display"></div></div>
@@ -321,22 +363,30 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
           </div>
           <div class="form-group"><label class="form-label">Customer Name *</label><input type="text" class="form-input" id="out-customer" placeholder="Full name"></div>
           <div class="form-group"><label class="form-label">Installation Address *</label><textarea class="form-textarea" id="out-address" placeholder="Street, suburb, city"></textarea></div>
-          <div class="form-row">
-            <div class="form-group"><label class="form-label">Client Invoice No. *</label><input type="text" class="form-input" id="out-invoice" placeholder="INV-2026-001"></div>
-            <div class="form-group"><label class="form-label">Account / Ref *</label><input type="text" class="form-input" id="out-ref" placeholder="ACC-001"></div>
-          </div>
+          <div class="form-group"><label class="form-label">Client Invoice No. *</label><input type="text" class="form-input" id="out-invoice" placeholder="INV-2026-001"></div>
           <div class="form-group"><label class="form-label">Installer *</label>
-            <input class="form-input" id="out-installer" list="installers-list" placeholder="Search installer by name"><datalist id="installers-list"></datalist>
+            <div class="typeahead" id="ta-out-installer">
+              <input class="form-input" id="out-installer" autocomplete="off" placeholder="Type installer name">
+              <div class="ta-results" id="out-installer-results"></div>
+            </div>
             <div id="out-installer-info" style="font-size:0.76rem;color:var(--text2);margin-top:5px"></div>
           </div>
           <div class="form-group"><label class="form-label">Install Date *</label><input type="date" class="form-input" id="out-date"></div>
           <div class="form-group"><label class="form-label">Status *</label>
             <select class="form-select" id="out-status"><option value="Installed">Installed now (completed)</option><option value="Sent for Install">Sent for install (not yet done)</option></select>
           </div>
+          <div class="form-group"><label class="form-label">Installer charge for this job (R)</label><input type="number" step="0.01" class="form-input" id="out-installer-charge" placeholder="0.00"></div>
+          <div class="form-group" id="out-photos-wrap">
+            <label class="form-label">Installation photos * (1 before, 2 after)</label>
+            <div class="note" style="font-size:0.76rem;color:var(--text2);margin-bottom:4px;line-height:1.5">Required when recording an install now. Each photo is date- and time-stamped and embedded in the certificate PDF.</div>
+            <div class="ph-slot" data-slot="before"><div class="ph-slot-label"><span>1 &middot; BEFORE</span><span class="tick">&#10003;</span></div><input type="file" accept="image/*" capture="environment" class="ph-input" data-slot="before"><div class="ph-prev"></div></div>
+            <div class="ph-slot" data-slot="after1"><div class="ph-slot-label"><span>2 &middot; AFTER (installed)</span><span class="tick">&#10003;</span></div><input type="file" accept="image/*" capture="environment" class="ph-input" data-slot="after1"><div class="ph-prev"></div></div>
+            <div class="ph-slot" data-slot="after2"><div class="ph-slot-label"><span>3 &middot; AFTER (serial / close-up)</span><span class="tick">&#10003;</span></div><input type="file" accept="image/*" capture="environment" class="ph-input" data-slot="after2"><div class="ph-prev"></div></div>
+          </div>
           <div class="form-group"><label class="form-label">Notes</label><textarea class="form-textarea" id="out-notes" placeholder="Optional"></textarea></div>
           <button class="btn btn-primary" id="btn-submit-out" style="background:var(--red)">Record Installation (manual)</button>
-          <button class="btn btn-secondary" id="btn-send-installer" style="margin-top:8px">&#9993; Send Link to Installer (with photos)</button>
-          <div class="note" style="font-size:0.78rem;color:var(--text2);margin-top:8px;line-height:1.5">"Record Installation" logs it yourself now. "Send Link" emails the installer a page to set the date, upload required photos, and submit.</div>
+          <button class="btn btn-secondary" id="btn-send-installer" style="margin-top:8px">&#9993; Send Link to Installer</button>
+          <div class="note" style="font-size:0.78rem;color:var(--text2);margin-top:8px;line-height:1.5">"Record Installation" logs it yourself now (photos required, certificate generated). "Send Link" emails the installer a page to set the date, upload the required photos, and submit.</div>
         </div>
 
         <!-- VERIFY -->
@@ -359,6 +409,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
         <button class="report-tab" data-report="installed">Installed</button>
         <button class="report-tab" data-report="meterdetail">Meter Detail</button>
         <button class="report-tab" data-report="margin">Margins</button>
+        <button class="report-tab" data-report="jobprofit">Job Profit</button>
         <button class="report-tab" data-report="supplier">Suppliers</button>
         <button class="report-tab" data-report="lowstock">Low Stock</button>
       </div>
@@ -368,7 +419,7 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
       </div>
       <div class="filter-row" id="installer-filter-row" style="display:none">
         <label class="form-label" style="display:block;margin-bottom:4px">Filter by Installer</label>
-        <input class="form-input" id="report-installer" list="installers-list" placeholder="All installers">
+        <div class="typeahead" id="ta-report-installer"><input class="form-input" id="report-installer" autocomplete="off" placeholder="All installers (type to filter)"><div class="ta-results" id="report-installer-results"></div></div>
       </div>
       <div class="export-row">
         <button class="btn btn-secondary btn-sm" id="btn-run-report">Run Report</button>
@@ -438,6 +489,15 @@ html,body{height:100%;overflow:hidden;background:var(--bg);color:var(--text);fon
         <button class="btn btn-secondary btn-sm" id="btn-add-user">Add User</button>
       </div>
       <div class="settings-section">
+        <div class="settings-section-title">Change Password</div>
+        <div class="form-group"><label class="form-label">Current Password</label><input type="password" class="form-input" id="cp-current" autocomplete="current-password"></div>
+        <div class="form-group"><label class="form-label">New Password (min 6)</label><input type="password" class="form-input" id="cp-new" autocomplete="new-password"></div>
+        <div class="form-group"><label class="form-label">Confirm New Password</label><input type="password" class="form-input" id="cp-confirm" autocomplete="new-password"></div>
+        <button class="btn btn-secondary btn-sm" id="btn-change-password">Update Password</button>
+        <div id="cp-msg" style="font-size:0.85rem;margin-top:10px;display:none"></div>
+      </div>
+
+      <div class="settings-section">
         <div class="settings-section-title">Account</div>
         <div id="settings-user-info" style="font-size:0.9rem;color:var(--text2);margin-bottom:12px"></div>
         <button class="btn btn-danger btn-sm" id="btn-signout2">Sign Out</button>
@@ -472,13 +532,14 @@ const SHEETS={Meters:'Meters',MeterTypes:'MeterTypes',Ledger:'Ledger',Settings:'
 const HEADERS={
   Meters:['MeterNumber','Category','MeterType','Phase','CostPrice','SellingPrice','SupplierName','InvoiceNumber','Status','CustomerName','InstallAddress','DateReceived','DateDispatched','DateCreated','DateUpdated','DispatchInvoice','InstallerName','InstallerMobile','UsesSigfox','SigfoxExpiry','InstallDate','Reference'],
   MeterTypes:['Category','MeterType','Phase','CostPrice','SellingPrice','ReorderLevel','SupplierName','DateCreated'],
-  Ledger:['TransactionID','Timestamp','MovementType','MeterNumber','Category','MeterType','Phase','CostPrice','SellingPrice','SupplierName','InvoiceNumber','CustomerName','InstallAddress','Reference','MovementDate','PerformedBy','Notes','DispatchInvoice','InstallerName','InstallerMobile'],
+  Ledger:['TransactionID','Timestamp','MovementType','MeterNumber','Category','MeterType','Phase','CostPrice','SellingPrice','SupplierName','InvoiceNumber','CustomerName','InstallAddress','Reference','MovementDate','PerformedBy','Notes','DispatchInvoice','InstallerName','InstallerMobile','InstallerCharge'],
   Settings:['Key','Value'],
   Installers:['Name','Mobile','Email','CalloutCost','DateAdded'],
   Suppliers:['Name','RepName','Mobile','WorkNumber','Email','DateAdded']
 };
 
 let accessToken=null,currentUser=null,appUser=null,meters=[],meterTypes=[],installers=[],suppliers=[],settings={},currentMovementType='in',currentTypeKey=null,installBasket=[];
+let tokenClient=null,_tokenResolve=null,_tokenReject=null,_gapiReady=false,_typeaheadsReady=false,jobPrices={};
 
 const fmt=v=>'R '+parseFloat(v||0).toLocaleString('en-ZA',{minimumFractionDigits:2,maximumFractionDigits:2});
 const today=()=>new Date().toISOString().split('T')[0];
@@ -491,14 +552,36 @@ function toast(msg,type){const t=document.getElementById('toast');t.textContent=
 function daysUntil(d){if(!d)return null;const t=new Date(d+'T00:00:00');return Math.ceil((t-new Date())/86400000);}
 
 // ---- AUTH ----
+function buildTokenClient(){
+  if(tokenClient)return;
+  tokenClient=google.accounts.oauth2.initTokenClient({client_id:GOOGLE_CLIENT_ID,scope:SCOPES,callback:resp=>{
+    if(resp&&resp.access_token){
+      accessToken=resp.access_token;
+      try{gapi.client.setToken({access_token:accessToken});}catch(e){}
+      if(_tokenResolve){const ok=_tokenResolve;_tokenResolve=null;_tokenReject=null;ok(accessToken);}
+    }else{
+      const msg=(resp&&resp.error)||'token_error';
+      if(_tokenReject){const no=_tokenReject;_tokenResolve=null;_tokenReject=null;no(new Error(msg));}
+    }
+  }});
+}
+// interactive=true -> normal sign-in; interactive=false -> silent refresh
+function requestToken(interactive){
+  return new Promise((resolve,reject)=>{
+    buildTokenClient();
+    _tokenResolve=resolve;_tokenReject=reject;
+    try{tokenClient.requestAccessToken({prompt:interactive?'':'none'});}
+    catch(e){_tokenResolve=null;_tokenReject=null;reject(e);}
+  });
+}
+async function refreshAccessToken(){ return requestToken(false); }
 function initGoogleAuth(){
-  document.getElementById('btn-google-signin').addEventListener('click',()=>{
-    const client=google.accounts.oauth2.initTokenClient({client_id:GOOGLE_CLIENT_ID,scope:SCOPES,callback:async resp=>{
-      if(resp.error){authErr(resp.error);return;}
-      accessToken=resp.access_token; await gapi.client.init({}); gapi.client.setToken({access_token:accessToken});
+  document.getElementById('btn-google-signin').addEventListener('click',async()=>{
+    try{
+      if(!_gapiReady){await gapi.client.init({});_gapiReady=true;}
+      await requestToken(true);
       await onSignedIn();
-    }});
-    client.requestAccessToken();
+    }catch(e){authErr((e&&e.message)||'Sign-in failed');}
   });
 }
 function authErr(m){const e=document.getElementById('auth-error');e.textContent=m;e.style.display='block';}
@@ -530,11 +613,11 @@ async function enterApp(user){
   document.getElementById('app').classList.add('active');
   document.getElementById('sheets-link').href='https://docs.google.com/spreadsheets/d/'+SPREADSHEET_ID+'/edit';
   showLoader(true);
-  try{await loadAll(); loadDashboard(); renderSettingsLists();}finally{showLoader(false);}
+  try{await loadAll(); initInstallerTypeaheads(); loadDashboard(); renderSettingsLists();}finally{showLoader(false);}
 }
 // LOGIN handlers
 document.getElementById('btn-login').addEventListener('click',async()=>{
-  const email=document.getElementById('login-email').value.trim();
+  const email=document.getElementById('login-email').value.trim().toLowerCase();
   const pw=document.getElementById('login-password').value;
   const errEl=document.getElementById('login-error'); errEl.style.display='none';
   if(!email||!pw){errEl.textContent='Enter email and password';errEl.style.display='block';return;}
@@ -565,15 +648,57 @@ document.getElementById('btn-create-cancel').addEventListener('click',()=>{
   document.getElementById('login-screen').style.display='flex';
 });
 
+// ---- PASSWORD: forgot/reset + change ----
+document.getElementById('link-forgot').addEventListener('click',(e)=>{
+  e.preventDefault();
+  const w=document.getElementById('reset-wrap');
+  const show=(w.style.display==='none'||!w.style.display);
+  w.style.display=show?'block':'none';
+  if(show)document.getElementById('reset-email').value=document.getElementById('login-email').value.trim();
+});
+document.getElementById('btn-reset').addEventListener('click',async()=>{
+  const email=document.getElementById('reset-email').value.trim().toLowerCase();
+  const msg=document.getElementById('reset-msg');
+  if(!email){msg.style.display='block';msg.style.color='var(--red)';msg.textContent='Enter your email address';return;}
+  showLoader(true);
+  try{await callBackend({action:'resetPassword',email:email});
+    msg.style.display='block';msg.style.color='var(--green)';
+    msg.textContent='If an account exists for that email, a temporary password has been emailed. Sign in with it, then change it under Settings.';
+  }catch(e){msg.style.display='block';msg.style.color='var(--red)';msg.textContent='Connection error';}
+  finally{showLoader(false);}
+});
+document.getElementById('btn-change-password').addEventListener('click',async()=>{
+  const cur=document.getElementById('cp-current').value, nw=document.getElementById('cp-new').value, cf=document.getElementById('cp-confirm').value;
+  const msg=document.getElementById('cp-msg');
+  const show=(t,ok)=>{msg.style.display='block';msg.style.color=ok?'var(--green)':'var(--red)';msg.textContent=t;};
+  if(!cur||!nw){show('Enter your current and new password',false);return;}
+  if(nw.length<6){show('New password must be at least 6 characters',false);return;}
+  if(nw!==cf){show('New passwords do not match',false);return;}
+  if(!appUser||!appUser.email){show('Not signed in',false);return;}
+  showLoader(true);
+  try{const r=await callBackend({action:'changePassword',email:appUser.email,currentPassword:cur,newPassword:nw});
+    if(r.ok){show('Password updated.',true);['cp-current','cp-new','cp-confirm'].forEach(id=>document.getElementById(id).value='');}
+    else show(r.error||'Could not update password',false);
+  }catch(e){show('Connection error',false);}finally{showLoader(false);}
+});
+
 // ---- SHEETS ----
 async function sheetsRequest(c){
-  c.headers=c.headers||{}; c.headers['Authorization']='Bearer '+accessToken;
-  let a=0;
-  while(a<3){
+  c.headers=c.headers||{};
+  let a=0,refreshed=false;
+  while(a<4){
+    c.headers['Authorization']='Bearer '+accessToken;
     const r=await fetch(c.url,{method:c.method||'GET',headers:c.headers,body:c.body?JSON.stringify(c.body):undefined});
     if(r.status===429){await new Promise(x=>setTimeout(x,1000*(a+1)));a++;continue;}
-    if(r.status===401){toast('Session expired, please sign in again','error');throw new Error('401');}
-    const d=await r.json(); if(!r.ok)throw new Error(d.error?.message||'Sheets error'); return d;
+    if(r.status===401){
+      if(!refreshed){
+        refreshed=true;
+        try{await refreshAccessToken();}catch(e){toast('Session expired, please sign in again','error');throw new Error('401');}
+        continue; // retry once with the fresh token
+      }
+      toast('Session expired, please sign in again','error');throw new Error('401');
+    }
+    const d=await r.json(); if(!r.ok)throw new Error((d.error&&d.error.message)||'Sheets error'); return d;
   }
   throw new Error('Rate limit');
 }
@@ -622,8 +747,45 @@ async function loadAll(){
   refreshDatalists();
 }
 function refreshDatalists(){
-  document.getElementById('installers-list').innerHTML=installers.map(i=>'<option value="'+esc(i.Name)+'">'+esc(i.Mobile)+'</option>').join('');
-  document.getElementById('suppliers-list').innerHTML=suppliers.map(s=>'<option value="'+esc(s.Name)+'"></option>').join('');
+  const sl=document.getElementById('suppliers-list');
+  if(sl)sl.innerHTML=suppliers.map(s=>'<option value="'+esc(s.Name)+'"></option>').join('');
+}
+// Generic installer typeahead (replaces fragile datalist search)
+function attachInstallerTypeahead(inputId,resultsId,onPick){
+  const input=document.getElementById(inputId), box=document.getElementById(resultsId);
+  if(!input||!box)return;
+  let active=-1, items=[];
+  function close(){box.classList.remove('show');box.innerHTML='';active=-1;}
+  function draw(){
+    const ql=(input.value||'').trim().toLowerCase();
+    items=installers.filter(i=>!ql||(i.Name||'').toLowerCase().includes(ql)||(i.Mobile||'').toLowerCase().includes(ql));
+    if(!installers.length){box.innerHTML='<div class="ta-empty">No installers yet \u2014 add one in Settings.</div>';box.classList.add('show');return;}
+    if(!items.length){box.innerHTML='<div class="ta-empty">No match.</div>';box.classList.add('show');return;}
+    box.innerHTML=items.map((i,idx)=>'<div class="ta-item'+(idx===active?' active':'')+'" data-idx="'+idx+'"><div>'+esc(i.Name)+'</div><div class="ta-sub">'+esc(i.Mobile||'')+(i.Email?' \u00b7 '+esc(i.Email):'')+(i.CalloutCost?' \u00b7 Callout R'+esc(i.CalloutCost):'')+'</div></div>').join('');
+    box.classList.add('show');
+  }
+  function pick(i){ input.value=i.Name; close(); if(onPick)onPick(i); }
+  input.addEventListener('focus',draw);
+  input.addEventListener('input',function(){active=-1;draw();if(onPick)onPick(installers.find(x=>x.Name===input.value)||null);});
+  input.addEventListener('keydown',function(e){
+    if(!box.classList.contains('show'))return;
+    if(e.key==='ArrowDown'){e.preventDefault();active=Math.min(active+1,items.length-1);draw();}
+    else if(e.key==='ArrowUp'){e.preventDefault();active=Math.max(active-1,0);draw();}
+    else if(e.key==='Enter'){if(active>=0&&items[active]){e.preventDefault();pick(items[active]);}}
+    else if(e.key==='Escape'){close();}
+  });
+  box.addEventListener('mousedown',function(e){const it=e.target.closest('.ta-item');if(it){e.preventDefault();pick(items[+it.dataset.idx]);}});
+  const wrapId=input.parentElement.id;
+  document.addEventListener('click',function(e){ if(!e.target.closest('#'+wrapId))close(); });
+}
+function initInstallerTypeaheads(){
+  if(_typeaheadsReady)return; _typeaheadsReady=true;
+  attachInstallerTypeahead('out-installer','out-installer-results',function(inst){
+    document.getElementById('out-installer-info').textContent=inst?('Mobile: '+inst.Mobile+(inst.Email?' \u00b7 '+inst.Email:'')+(inst.CalloutCost?' \u00b7 Callout R'+inst.CalloutCost:'')):'';
+  });
+  attachInstallerTypeahead('report-installer','report-installer-results',null);
+  wireInstallPhotoSlots();
+  document.getElementById('out-status').addEventListener('change',toggleInstallPhotos);
 }
 
 function typeKey(c,t,p){return c+'||'+t+'||'+(p||'');}
@@ -641,10 +803,9 @@ function renderDashboard(filter){
   const expiring=meters.filter(m=>m.UsesSigfox==='Yes'&&m.SigfoxExpiry&&daysUntil(m.SigfoxExpiry)!==null&&daysUntil(m.SigfoxExpiry)<=14);
   const sg=document.getElementById('summary-grid');
   let tiles='';
-  tiles+='<div class="summary-tile"><div class="tile-label">In Stock</div><div class="tile-value green">'+inStock+'</div></div>';
-  tiles+='<div class="summary-tile"><div class="tile-label">Sent for Install (pending)</div><div class="tile-value amber">'+sent+'</div></div>';
-  tiles+='<div class="summary-tile"><div class="tile-label">Installed</div><div class="tile-value">'+installed+'</div></div>';
-  tiles+='<div class="summary-tile"><div class="tile-label">Stock Value (Cost)</div><div class="tile-value">'+fmt(costVal)+'</div></div>';
+  tiles+='<div class="summary-tile" style="cursor:pointer" onclick="showStatusList(\'In Stock\')"><div class="tile-label">In Stock \u00b7 tap to list</div><div class="tile-value green">'+inStock+'</div></div>';
+  tiles+='<div class="summary-tile" style="cursor:pointer" onclick="showStatusList(\'Sent for Install\')"><div class="tile-label">Sent for Install \u00b7 tap to list</div><div class="tile-value amber">'+sent+'</div></div>';
+  tiles+='<div class="summary-tile" style="cursor:pointer" onclick="showStatusList(\'Installed\')"><div class="tile-label">Installed \u00b7 tap to list</div><div class="tile-value">'+installed+'</div></div>';
   if(expiring.length){
     tiles+='<div class="summary-tile alert-tile" onclick="showExpiring()"><div class="tile-label">&#9888; Sigfox Licences Expiring &le;14 days</div><div class="tile-value">'+expiring.length+' meter(s) &mdash; tap to view</div></div>';
   }
@@ -656,6 +817,17 @@ function renderDashboard(filter){
   meterTypes.forEach(t=>{keys[typeKey(t.Category,t.MeterType,t.Phase)]={cat:t.Category,type:t.MeterType,phase:t.Phase,reorder:parseFloat(t.ReorderLevel||0),cost:parseFloat(t.CostPrice||0),sell:parseFloat(t.SellingPrice||0)};});
   meters.forEach(m=>{const k=typeKey(m.Category,m.MeterType,m.Phase);if(!keys[k])keys[k]={cat:m.Category,type:m.MeterType,phase:m.Phase,reorder:0,cost:parseFloat(m.CostPrice||0),sell:parseFloat(m.SellingPrice||0)};});
   let html='';
+  if(q){
+    const mm=meters.filter(m=>(m.MeterNumber||'').toLowerCase().includes(q)||(m.MeterType||'').toLowerCase().includes(q)).slice(0,50);
+    if(mm.length){
+      html+='<div class="cat-group"><div class="cat-header"><span class="cat-icon">&#128269;</span>Matching meters ('+mm.length+')</div>';
+      mm.forEach(m=>{
+        const k=typeKey(m.Category,m.MeterType,m.Phase);
+        html+='<div class="type-card" onclick="openDetail(\''+encodeURIComponent(k)+'\')"><div class="type-card-header"><div><div class="type-name">'+esc(m.MeterNumber)+'</div><div class="type-phase">'+esc(m.MeterType)+(m.Phase?' \u00b7 '+esc(m.Phase):'')+' \u00b7 '+esc(m.Status)+'</div></div></div></div>';
+      });
+      html+='</div>';
+    }
+  }
   CATEGORIES.forEach(cat=>{
     const catKeys=Object.entries(keys).filter(([k,v])=>v.cat===cat);
     const vis=catKeys.filter(([k,v])=>!q||v.type.toLowerCase().includes(q)||metersForType(v.cat,v.type,v.phase).some(m=>(m.MeterNumber||'').toLowerCase().includes(q)));
@@ -686,6 +858,23 @@ function renderDashboard(filter){
 }
 document.getElementById('meter-search').addEventListener('input',function(){renderDashboard(this.value);});
 
+function showStatusList(status){
+  const list=meters.filter(m=>m.Status===status).sort((a,b)=>String(a.MeterNumber).localeCompare(String(b.MeterNumber)));
+  let body=list.length?list.map(m=>{
+    const sub=esc(m.MeterType)+(m.Phase?' \u00b7 '+esc(m.Phase):'');
+    let extra;
+    if(status==='Sent for Install'||status==='Installed'){
+      extra='<div class="chip-sub">'+esc(m.CustomerName||'')+(m.InstallAddress?' \u00b7 '+esc(m.InstallAddress):'')+'</div>'
+           +'<div class="chip-sub">Installer: '+esc(m.InstallerName||'-')+(m.InstallerMobile?' ('+esc(m.InstallerMobile)+')':'')+' \u00b7 Inv: '+esc(m.DispatchInvoice||'-')+'</div>'
+           +(m.InstallDate?'<div class="chip-sub">'+(status==='Installed'?'Installed ':'Scheduled ')+fmtDate(m.InstallDate)+'</div>':'')
+           +(m.PhotoFolder?'<div class="chip-sub"><a href="'+esc(m.PhotoFolder)+'" target="_blank" style="color:var(--blue2)">&#128247; Photos</a></div>':'');
+    } else {
+      extra='<div class="chip-sub">Received '+fmtDate(m.DateReceived)+(m.SupplierName?' \u00b7 '+esc(m.SupplierName):'')+(m.InvoiceNumber?' \u00b7 Inv '+esc(m.InvoiceNumber):'')+'</div>';
+    }
+    return '<div class="list-chip"><div style="width:100%"><div style="font-family:var(--mono)">'+esc(m.MeterNumber)+'</div><div class="chip-sub">'+sub+'</div>'+extra+'</div></div>';
+  }).join(''):'<div class="empty-state">No meters with status \u201c'+esc(status)+'\u201d.</div>';
+  openModal(status+' \u2014 '+list.length+' meter(s)',body);
+}
 function showExpiring(){
   const ex=meters.filter(m=>m.UsesSigfox==='Yes'&&m.SigfoxExpiry&&daysUntil(m.SigfoxExpiry)!==null&&daysUntil(m.SigfoxExpiry)<=14)
     .sort((a,b)=>daysUntil(a.SigfoxExpiry)-daysUntil(b.SigfoxExpiry));
@@ -722,7 +911,7 @@ function openDetail(enc){
       }
       let actions='<div class="meter-actions">';
       if(m.Status==='In Stock'){actions+='<button onclick="setMeterStatus(\''+esc(m.MeterNumber)+'\',\'Key Change\')">Send for Key Change</button><button onclick="setMeterStatus(\''+esc(m.MeterNumber)+'\',\'Used\')">Mark Used</button>';}
-      else if(m.Status==='Key Change'||m.Status==='Used'){actions+='<button onclick="setMeterStatus(\''+esc(m.MeterNumber)+'\',\'In Stock\')">Return to Stock</button>';}
+      else {actions+='<button onclick="setMeterStatus(\''+esc(m.MeterNumber)+'\',\'In Stock\')">Move back to In Stock</button>';}
       actions+='</div>';
       return '<div class="meter-row"><div class="meter-row-top"><div class="meter-num">'+esc(m.MeterNumber)+'</div><div class="meter-status '+cls+'">'+m.Status+'</div></div><div class="meter-sub">'+sub+'</div>'+actions+'</div>';
     }).join('');
@@ -760,6 +949,7 @@ async function startScanner(){
     if(e.name==='NotAllowedError')msg='Camera permission denied.<br>Allow camera access and reload.';
     if(e.name==='NotFoundError')msg='No camera found on this device.';
     document.getElementById('viewfinder-wrap').innerHTML='<div style="padding:30px 20px;text-align:center;color:#cdd8e4;font-size:0.85rem">'+msg+'</div>';
+    const mw=document.getElementById('manual-entry-wrap'); if(mw)mw.style.display='block';
   }
 }
 let scanner=null,scannerActive=false;
@@ -825,20 +1015,65 @@ function addToBasket(m){ if(!installBasket.find(x=>x.MeterNumber===m.MeterNumber
 function renderBasket(){
   const c=document.getElementById('basket-items');
   if(!installBasket.length){c.innerHTML='<div style="color:var(--text3);font-size:0.85rem">No meters yet \u2014 scan a meter.</div>';return;}
-  c.innerHTML=installBasket.map(m=>'<div class="basket-item"><div>'+esc(m.MeterNumber)+'<div style="font-size:0.74rem;color:var(--text3)">'+esc(m.MeterType)+(m.Phase?' \u00b7 '+esc(m.Phase):'')+'</div></div><span class="rm" onclick="removeBasket(\''+esc(m.MeterNumber)+'\')">Remove</span></div>').join('');
+  c.innerHTML=installBasket.map(m=>{
+    const mn=m.MeterNumber;
+    if(jobPrices[mn]===undefined)jobPrices[mn]=round2(m.SellingPrice||0);
+    const cost=parseFloat(m.CostPrice||0);
+    const below=parseFloat(jobPrices[mn]||0)<cost;
+    return '<div class="basket-item"><div style="flex:1">'+esc(mn)
+      +'<div style="font-size:0.74rem;color:var(--text3)">'+esc(m.MeterType)+(m.Phase?' \u00b7 '+esc(m.Phase):'')+'</div>'
+      +'<div class="basket-price"><label>Client R</label><input type="number" step="0.01" data-meter="'+esc(mn)+'" value="'+jobPrices[mn]+'" class="job-price'+(below?' below-cost':'')+'"><span class="cost-hint">cost R'+cost.toFixed(2)+'</span></div>'
+      +'</div><span class="rm" onclick="removeBasket(\''+esc(mn)+'\')">Remove</span></div>';
+  }).join('');
+  c.querySelectorAll('.job-price').forEach(inp=>{
+    inp.addEventListener('input',function(){
+      const mn=this.getAttribute('data-meter');
+      jobPrices[mn]=this.value===''?'':round2(this.value);
+      const mm=installBasket.find(x=>x.MeterNumber===mn)||{};
+      this.classList.toggle('below-cost',parseFloat(this.value||0)<parseFloat(mm.CostPrice||0));
+    });
+  });
 }
-function removeBasket(code){installBasket=installBasket.filter(m=>m.MeterNumber!==code);renderBasket();}
+// ---- INSTALL PHOTO SLOTS (manual install) ----
+const INSTALL_SLOT_LABELS={before:'Before',after1:'After 1',after2:'After 2'};
+let installPhotoSlots={before:null,after1:null,after2:null};
+function wireInstallPhotoSlots(){
+  document.querySelectorAll('#out-photos-wrap .ph-input').forEach(input=>{
+    input.addEventListener('change',function(e){
+      const slot=input.getAttribute('data-slot');
+      const file=e.target.files&&e.target.files[0]; if(!file)return;
+      const reader=new FileReader();
+      reader.onload=function(ev){
+        const stamp=new Date().toLocaleString('en-ZA');
+        installPhotoSlots[slot]={name:file.name,dataUrl:ev.target.result,stamp:stamp,label:INSTALL_SLOT_LABELS[slot]};
+        const card=document.querySelector('#out-photos-wrap .ph-slot[data-slot="'+slot+'"]');
+        card.querySelector('.ph-prev').innerHTML='<div class="ph-thumb"><img src="'+ev.target.result+'"><div class="stamp">'+INSTALL_SLOT_LABELS[slot]+' \u00b7 '+stamp+'</div></div>';
+        card.classList.add('done');
+      };
+      reader.readAsDataURL(file);
+    });
+  });
+}
+function collectInstallPhotos(){const out=[];['before','after1','after2'].forEach(sl=>{if(installPhotoSlots[sl])out.push(installPhotoSlots[sl]);});return out;}
+function installMissingSlots(){return ['before','after1','after2'].filter(sl=>!installPhotoSlots[sl]);}
+function resetInstallPhotos(){
+  installPhotoSlots={before:null,after1:null,after2:null};
+  document.querySelectorAll('#out-photos-wrap .ph-slot').forEach(c=>{c.classList.remove('done');const p=c.querySelector('.ph-prev');if(p)p.innerHTML='';});
+  document.querySelectorAll('#out-photos-wrap .ph-input').forEach(i=>{i.value='';});
+}
+function toggleInstallPhotos(){
+  document.getElementById('out-photos-wrap').style.display=(document.getElementById('out-status').value==='Installed')?'block':'none';
+}
+function removeBasket(code){installBasket=installBasket.filter(m=>m.MeterNumber!==code);delete jobPrices[code];renderBasket();}
 function showOutForm(){
   const f=document.getElementById('form-out');f.style.display='block';
   renderBasket();
   document.getElementById('out-date').value=today();
   document.getElementById('out-status').value='Installed';
+  document.getElementById('out-installer-charge').value='';
+  resetInstallPhotos(); toggleInstallPhotos();
   f.scrollIntoView({behavior:'smooth'});
 }
-document.getElementById('out-installer').addEventListener('input',function(){
-  const inst=installers.find(i=>i.Name===this.value);
-  document.getElementById('out-installer-info').textContent=inst?('Mobile: '+inst.Mobile+(inst.Email?' \u00b7 '+inst.Email:'')+(inst.CalloutCost?' \u00b7 Callout R'+inst.CalloutCost:'')):'';
-});
 function showTakeForm(m){
   const f=document.getElementById('form-take');f.style.display='block';
   document.getElementById('take-meter-info').innerHTML='<label class="form-label">Meter</label><div style="font-family:var(--mono);color:var(--blue2)">'+esc(m.MeterNumber)+'</div><div style="font-size:0.8rem;color:var(--text2);margin-top:2px">'+esc(m.MeterType)+' \u00b7 Status: '+m.Status+'</div>';
@@ -855,7 +1090,21 @@ document.querySelectorAll('.mvt-tab').forEach(btn=>btn.addEventListener('click',
   if(currentMovementType==='out'){const f=document.getElementById('form-out');showOutForm();}
 }));
 document.getElementById('btn-rescan').addEventListener('click',()=>{document.getElementById('scanned-info').style.display='none';startScanner();});
-document.getElementById('btn-manual-entry').addEventListener('click',()=>{const c=prompt('Enter meter number:');if(c)handleScannedCode(c.trim());});
+document.getElementById('btn-manual-entry').addEventListener('click',()=>{
+  const w=document.getElementById('manual-entry-wrap');
+  const show=(w.style.display==='none'||!w.style.display);
+  w.style.display=show?'block':'none';
+  if(show)setTimeout(()=>document.getElementById('manual-meter-input').focus(),50);
+});
+function manualGo(){
+  const v=(document.getElementById('manual-meter-input').value||'').trim();
+  if(!v){toast('Enter a meter number','error');return;}
+  document.getElementById('manual-entry-wrap').style.display='none';
+  document.getElementById('manual-meter-input').value='';
+  handleScannedCode(v);
+}
+document.getElementById('btn-manual-go').addEventListener('click',manualGo);
+document.getElementById('manual-meter-input').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();manualGo();}});
 
 // SUBMIT RECEIVE
 document.getElementById('btn-submit-in').addEventListener('click',async()=>{
@@ -895,27 +1144,44 @@ document.getElementById('btn-submit-out').addEventListener('click',async()=>{
   const customer=document.getElementById('out-customer').value.trim();
   const address=document.getElementById('out-address').value.trim();
   const clientInv=document.getElementById('out-invoice').value.trim();
-  const ref=document.getElementById('out-ref').value.trim();
   const installerName=document.getElementById('out-installer').value.trim();
   const date=document.getElementById('out-date').value;
   const status=document.getElementById('out-status').value;
-  if(!customer||!address||!clientInv||!ref||!installerName||!date){toast('All fields are required','error');return;}
+  const installerCharge=round2(document.getElementById('out-installer-charge').value||0);
+  if(!customer||!address||!clientInv||!installerName||!date){toast('Customer, address, invoice, installer and date are required','error');return;}
   const inst=installers.find(i=>i.Name===installerName);
   if(!inst){toast('Select a valid installer from the list','error');return;}
+  let photoPayload=[];
+  if(status==='Installed'){
+    const miss=installMissingSlots();
+    if(miss.length){toast('All 3 photos required: '+miss.map(x=>INSTALL_SLOT_LABELS[x]).join(', '),'error');return;}
+    photoPayload=collectInstallPhotos();
+  }
+  const ref='';
   showLoader(true);
   try{
     const now=new Date().toISOString();
+    let photoFolderUrl='';
+    if(status==='Installed'&&photoPayload.length){
+      const up=await callBackend({action:'uploadInstallPhotos',meters:installBasket.map(m=>m.MeterNumber),customer:customer,address:address,reference:ref,performedBy:currentUser,photos:photoPayload});
+      if(up&&up.ok)photoFolderUrl=up.photoFolderUrl||'';
+    }
+    let first=true;
     for(const bm of installBasket){
       const m=meters.find(x=>x.MeterNumber===bm.MeterNumber); if(!m)continue;
       const idx=await findRowIndex('Meters',0,m.MeterNumber);
+      const clientPrice=(jobPrices[m.MeterNumber]!==undefined&&jobPrices[m.MeterNumber]!=='')?round2(jobPrices[m.MeterNumber]):round2(m.SellingPrice||0);
       Object.assign(m,{Status:status,CustomerName:customer,InstallAddress:address,DispatchInvoice:clientInv,Reference:ref,InstallerName:inst.Name,InstallerMobile:inst.Mobile,InstallDate:date,DateDispatched:date,DateUpdated:now});
+      if(photoFolderUrl)m.PhotoFolder=photoFolderUrl;
       await updateRow('Meters',idx,m);
-      await appendRow('Ledger',[uid(),now,status==='Installed'?'Stock Out':'Sent for Install',m.MeterNumber,m.Category,m.MeterType,m.Phase,m.CostPrice,m.SellingPrice,m.SupplierName,m.InvoiceNumber||'',customer,address,ref,date,currentUser,document.getElementById('out-notes').value,clientInv,inst.Name,inst.Mobile]);
+      const note=(document.getElementById('out-notes').value||'')+(photoFolderUrl?(' | Photos: '+photoFolderUrl):'');
+      await appendRow('Ledger',[uid(),now,status==='Installed'?'Stock Out':'Sent for Install',m.MeterNumber,m.Category,m.MeterType,m.Phase,m.CostPrice,clientPrice,m.SupplierName,m.InvoiceNumber||'',customer,address,ref,date,currentUser,note,clientInv,inst.Name,inst.Mobile,first?installerCharge:'']);
+      first=false;
     }
     showLoader(false);
-    if(status==='Installed')generateInstallPDF(installBasket.slice(),customer,address,ref,date,inst,clientInv);
+    if(status==='Installed')generateInstallPDF(installBasket.slice(),customer,address,ref,date,inst,clientInv,jobPrices,installerCharge,photoPayload,photoFolderUrl);
     toast(installBasket.length+' meter(s) recorded','success');
-    installBasket=[]; resetScanScreen();
+    installBasket=[]; jobPrices={}; resetScanScreen();
   }catch(e){showLoader(false);toast('Error: '+e.message,'error');}
 });
 
@@ -934,13 +1200,15 @@ document.getElementById('btn-submit-take').addEventListener('click',async()=>{
 function resetScanScreen(){
   document.getElementById('scanned-info').style.display='none'; hideAllForms();
   document.getElementById('scanned-code-display').textContent='';
-  ['out-customer','out-address','out-invoice','out-ref','out-installer','out-notes'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  ['out-customer','out-address','out-invoice','out-installer','out-installer-charge','out-notes'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
   document.getElementById('out-installer-info').textContent='';
+  jobPrices={}; resetInstallPhotos();
   renderDashboard(); startScanner();
 }
 
 // ---- INSTALL PDF (multi-meter) ----
-function generateInstallPDF(metersList,customer,address,ref,date,inst,clientInvoice){
+function generateInstallPDF(metersList,customer,address,ref,date,inst,clientInvoice,prices,installerCharge,photoPayload,photoFolderUrl){
+  prices=prices||{}; photoPayload=photoPayload||[];
   const {jsPDF}=window.jspdf; const doc=new jsPDF({unit:'mm',format:'a4'});
   const company=settings.CompanyName||'Inceku Energy Stewards'; const contact=settings.CompanyContact||'';
   let y=18; try{doc.addImage(LOGO_FULL,'PNG',20,y-4,46,25);}catch(e){}
@@ -949,22 +1217,79 @@ function generateInstallPDF(metersList,customer,address,ref,date,inst,clientInvo
   y+=26; doc.setDrawColor(61,125,196);doc.setLineWidth(0.8);doc.line(20,y,190,y);y+=11;
   doc.setFont('helvetica','bold');doc.setFontSize(14);doc.setTextColor(61,125,196);doc.text('METER INSTALLATION CERTIFICATE',20,y);y+=11;
   doc.setFontSize(10);doc.setTextColor(40,40,40);
-  const rows=[['Customer Name',customer],['Installation Address',address],['Client Invoice No.',clientInvoice||'-'],['Account / Reference',ref||'-'],['Installation Date',fmtDate(date)],['Installer',inst.Name+' ('+inst.Mobile+')']];
+  const rows=[['Customer Name',customer],['Installation Address',address],['Client Invoice No.',clientInvoice||'-'],['Installation Date',fmtDate(date)],['Installer',inst.Name+' ('+inst.Mobile+')']];
   rows.forEach(r=>{doc.setFont('helvetica','bold');doc.setTextColor(90,90,90);doc.text(r[0]+':',20,y);doc.setFont('helvetica','normal');doc.setTextColor(20,20,20);const l=doc.splitTextToSize(String(r[1]),110);doc.text(l,72,y);y+=l.length*6+2;});
   y+=4;
-  doc.autoTable({startY:y,head:[['Meter Number','Category','Type','Phase','Supplier Inv','Received']],
-    body:metersList.map(m=>[m.MeterNumber,m.Category,m.MeterType,m.Phase||'-',m.InvoiceNumber||'-',fmtDate(m.DateReceived)]),
-    theme:'grid',headStyles:{fillColor:[61,125,196],textColor:[255,255,255],fontSize:8},bodyStyles:{fontSize:8},margin:{left:20,right:20}});
-  y=doc.lastAutoTable.finalY+14;
+  let totClient=0,totCost=0;
+  const body=metersList.map(m=>{
+    const cp=(prices[m.MeterNumber]!==undefined&&prices[m.MeterNumber]!=='')?round2(prices[m.MeterNumber]):round2(m.SellingPrice||0);
+    totClient+=cp; totCost+=parseFloat(m.CostPrice||0);
+    return [m.MeterNumber,m.Category,m.MeterType,m.Phase||'-',m.InvoiceNumber||'-',fmtDate(m.DateReceived),fmt(cp)];
+  });
+  doc.autoTable({startY:y,head:[['Meter Number','Category','Type','Phase','Supplier Inv','Received','Client Price']],
+    body:body,theme:'grid',headStyles:{fillColor:[61,125,196],textColor:[255,255,255],fontSize:8},bodyStyles:{fontSize:8},margin:{left:20,right:20}});
+  y=doc.lastAutoTable.finalY+10;
+  const charge=round2(installerCharge||0); const profit=round2(totClient-totCost-charge);
+  doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(61,125,196);doc.text('Job Summary',20,y);y+=6;
+  doc.setFont('helvetica','normal');doc.setFontSize(9);
+  [['Total client price',fmt(totClient),false],['Total cost',fmt(totCost),false],['Installer charge',fmt(charge),false],['Job profit',fmt(profit),true]].forEach(r=>{
+    doc.setTextColor(90,90,90);doc.text(r[0]+':',20,y);
+    if(r[2]&&profit<0)doc.setTextColor(200,40,40);else doc.setTextColor(20,20,20);
+    doc.text(r[1],72,y);y+=5.5;
+  });
+  y+=8;
   doc.setDrawColor(200,200,200);doc.setLineWidth(0.3);doc.line(20,y,90,y);doc.line(110,y,180,y);
   doc.setFontSize(8);doc.setTextColor(120,120,120);doc.text('Customer Signature',20,y+5);doc.text('Installer Signature',110,y+5);
+  if(photoFolderUrl){doc.setFontSize(8);doc.setTextColor(61,125,196);doc.text('Photos: '+photoFolderUrl,20,y+15);}
   doc.setFontSize(7);doc.setTextColor(150,150,150);doc.text('Generated '+new Date().toLocaleString('en-ZA')+' \u00b7 '+company,20,287);
+  if(photoPayload.length){
+    photoPayload.forEach((p,i)=>{
+      doc.addPage();
+      doc.setFont('helvetica','bold');doc.setFontSize(12);doc.setTextColor(61,125,196);
+      doc.text('Installation Photo \u2014 '+(p.label||('Photo '+(i+1))),20,20);
+      doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(110,110,110);doc.text(String(p.stamp||''),20,27);
+      try{
+        const props=doc.getImageProperties(p.dataUrl);
+        const maxW=170,maxH=225; let w=maxW,h=w*props.height/props.width;
+        if(h>maxH){h=maxH;w=h*props.width/props.height;}
+        const fmtImg=(String(p.dataUrl).indexOf('image/png')>=0)?'PNG':'JPEG';
+        doc.addImage(p.dataUrl,fmtImg,20,33,w,h);
+      }catch(e){doc.setTextColor(180,60,60);doc.text('(image could not be embedded)',20,40);}
+    });
+  }
   doc.save('Installation_'+(metersList[0]?metersList[0].MeterNumber:'')+'_'+date+'.pdf');
+}
+function generateInstallRequestPDF(metersList,customer,address,clientInvoice,inst,url){
+  const {jsPDF}=window.jspdf; const doc=new jsPDF({unit:'mm',format:'a4'});
+  const company=settings.CompanyName||'Inceku Energy Stewards'; const contact=settings.CompanyContact||'';
+  let y=18; try{doc.addImage(LOGO_FULL,'PNG',20,y-4,46,25);}catch(e){}
+  doc.setFont('helvetica','bold');doc.setFontSize(13);doc.setTextColor(30,40,55);doc.text(company,72,y+6);
+  doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(120,120,120);if(contact)doc.text(contact,72,y+12);
+  y+=26; doc.setDrawColor(61,125,196);doc.setLineWidth(0.8);doc.line(20,y,190,y);y+=11;
+  doc.setFont('helvetica','bold');doc.setFontSize(14);doc.setTextColor(61,125,196);doc.text('METER INSTALLATION REQUEST FORM',20,y);y+=11;
+  doc.setFontSize(10);doc.setTextColor(40,40,40);
+  const rows=[['Customer Name',customer],['Installation Address',address],['Client Invoice No.',clientInvoice||'-'],['Assigned Installer',inst.Name+' ('+inst.Mobile+')'],['Date Issued',fmtDate(today())]];
+  rows.forEach(r=>{doc.setFont('helvetica','bold');doc.setTextColor(90,90,90);doc.text(r[0]+':',20,y);doc.setFont('helvetica','normal');doc.setTextColor(20,20,20);const l=doc.splitTextToSize(String(r[1]),110);doc.text(l,72,y);y+=l.length*6+2;});
+  y+=4;
+  doc.autoTable({startY:y,head:[['Meter Number','Category','Type','Phase','Supplier Inv']],
+    body:metersList.map(m=>[m.MeterNumber,m.Category,m.MeterType,m.Phase||'-',m.InvoiceNumber||'-']),
+    theme:'grid',headStyles:{fillColor:[61,125,196],textColor:[255,255,255],fontSize:8},bodyStyles:{fontSize:8},margin:{left:20,right:20}});
+  y=doc.lastAutoTable.finalY+10;
+  doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(61,125,196);doc.text('Required on completion',20,y);y+=6;
+  doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(40,40,40);
+  ['[  ] Photo 1 \u2014 BEFORE (meter position / existing setup)','[  ] Photo 2 \u2014 AFTER (installed meter in place)','[  ] Photo 3 \u2014 AFTER (close-up of serial / display)','[  ] Confirm installation date on the online form'].forEach(t=>{doc.text(t,20,y);y+=6;});
+  y+=2;
+  if(url){doc.setFontSize(9);doc.setTextColor(61,125,196);doc.text('Online submission link:',20,y);y+=5;doc.setTextColor(80,80,80);const lu=doc.splitTextToSize(String(url),170);doc.text(lu,20,y);y+=lu.length*5+4;}
+  y+=6;
+  doc.setDrawColor(200,200,200);doc.setLineWidth(0.3);doc.line(20,y,90,y);doc.line(110,y,180,y);
+  doc.setFontSize(8);doc.setTextColor(120,120,120);doc.text('Installer Signature',20,y+5);doc.text('Date',110,y+5);
+  doc.setFontSize(7);doc.setTextColor(150,150,150);doc.text('Generated '+new Date().toLocaleString('en-ZA')+' \u00b7 '+company,20,287);
+  doc.save('Install_Request_'+(metersList[0]?metersList[0].MeterNumber:'')+'_'+today()+'.pdf');
 }
 
 // ---- REPORTS ----
 let currentReport='valuation',reportData=[],reportTitle='Valuation',reportTotalsRow=null,reportColumns=null;
-const REPORT_TITLES={valuation:'Stock on Hand Valuation',movements:'Stock Movement History',installed:'Installed Meters Register',meterdetail:'Full Meter Detail',margin:'Profit Margin Report',supplier:'Supplier Purchase History',lowstock:'Low Stock / Reorder Report'};
+const REPORT_TITLES={valuation:'Stock on Hand Valuation',movements:'Stock Movement History',installed:'Installed Meters Register',meterdetail:'Full Meter Detail',margin:'Profit Margin Report',supplier:'Supplier Purchase History',lowstock:'Low Stock / Reorder Report',jobprofit:'Job Profit per Installation'};
 document.querySelectorAll('.report-tab').forEach(btn=>btn.addEventListener('click',function(){
   document.querySelectorAll('.report-tab').forEach(b=>b.classList.remove('active'));this.classList.add('active');
   currentReport=this.dataset.report;
@@ -989,6 +1314,7 @@ async function runReport(){
       else if(currentReport==='installed')repInstalled(l,from,to);
       else if(currentReport==='margin')repMargin(l,from,to);
       else if(currentReport==='supplier')repSupplier(l,from,to);
+      else if(currentReport==='jobprofit')repJobProfit(l,from,to);
     }
   }catch(e){toast('Report error: '+e.message,'error');}finally{showLoader(false);}
 }
@@ -1019,13 +1345,41 @@ function repInstalled(l,from,to){
   reportTitle=REPORT_TITLES.installed;const filt=document.getElementById('report-installer').value.trim().toLowerCase();
   let f=l.filter(e=>(e.MovementType==='Stock Out'||e.MovementType==='Sent for Install')&&e.MovementDate>=from&&e.MovementDate<=to);
   if(filt)f=f.filter(e=>(e.InstallerName||'').toLowerCase().includes(filt));
+  const byMeter={};
+  f.forEach(e=>{
+    const k=e.MeterNumber; const rank=e.MovementType==='Stock Out'?2:1; const prev=byMeter[k];
+    if(!prev||rank>prev._rank||(rank===prev._rank&&String(e.MovementDate||'')>=String(prev.MovementDate||''))){e._rank=rank;byMeter[k]=e;}
+  });
+  const list=Object.values(byMeter).sort((a,b)=>String(b.MovementDate||'').localeCompare(String(a.MovementDate||'')));
   reportData=[];
-  const rows=f.map(e=>{const mr=meters.find(x=>x.MeterNumber===e.MeterNumber)||{};
-    reportData.push({InstallDate:fmtDate(e.MovementDate),MeterNumber:e.MeterNumber,Category:e.Category,MeterType:e.MeterType,Phase:e.Phase||'-',Customer:e.CustomerName,Address:e.InstallAddress,ClientInvoice:e.DispatchInvoice||mr.DispatchInvoice||'-',Installer:e.InstallerName||'-',InstallerMobile:e.InstallerMobile||'-',ReceivedDate:fmtDate(mr.DateReceived||''),SupplierInvoice:mr.InvoiceNumber||'-',Status:mr.Status||e.MovementType,Photos:mr.PhotoFolder||''});
-    return '<tr><td>'+fmtDate(e.MovementDate)+'</td><td class="mono">'+esc(e.MeterNumber)+'</td><td>'+esc(e.MeterType)+'</td><td>'+esc(e.CustomerName)+'</td><td>'+esc(e.InstallAddress)+'</td><td class="mono">'+esc(e.DispatchInvoice||'-')+'</td><td>'+esc(e.InstallerName||'-')+'</td><td>'+fmtDate(mr.DateReceived||'')+'</td><td class="mono">'+esc(mr.InvoiceNumber||'-')+'</td><td>'+(mr.PhotoFolder?'<a href="'+esc(mr.PhotoFolder)+'" target="_blank">Photos</a>':'-')+'</td></tr>';});
-  reportColumns=['Install Date','Meter No.','Type','Customer','Address','Client Inv','Installer','Recv Date','Supplier Inv','Photos'];
-  reportTotalsRow=['TOTAL: '+f.length,'','','','','','','','',''];
-  document.getElementById('report-output').innerHTML=tbl(reportColumns,rows,'<td colspan="10">TOTAL INSTALLS: '+f.length+'</td>');
+  const rows=list.map(e=>{const mr=meters.find(x=>x.MeterNumber===e.MeterNumber)||{};const photo=mr.PhotoFolder||'';
+    reportData.push({InstallDate:fmtDate(e.MovementDate),MeterNumber:e.MeterNumber,Type:e.MeterType,Customer:e.CustomerName||'-',Address:e.InstallAddress||'-',ClientInvoice:e.DispatchInvoice||mr.DispatchInvoice||'-',Installer:e.InstallerName||'-',ReceivedDate:fmtDate(mr.DateReceived||''),SupplierInvoice:mr.InvoiceNumber||'-',Status:mr.Status||(e.MovementType==='Stock Out'?'Installed':'Sent for Install')});
+    return '<tr><td>'+fmtDate(e.MovementDate)+'</td><td class="mono">'+esc(e.MeterNumber)+'</td><td>'+esc(e.MeterType)+'</td><td>'+esc(e.CustomerName||'-')+'</td><td>'+esc(e.InstallAddress||'-')+'</td><td class="mono">'+esc(e.DispatchInvoice||mr.DispatchInvoice||'-')+'</td><td>'+esc(e.InstallerName||'-')+'</td><td>'+fmtDate(mr.DateReceived||'')+'</td><td class="mono">'+esc(mr.InvoiceNumber||'-')+'</td><td>'+(photo?'<a href="'+esc(photo)+'" target="_blank">Photos</a>':esc(mr.Status||'-'))+'</td></tr>';
+  });
+  reportColumns=['Install Date','Meter No.','Type','Customer','Address','Client Inv','Installer','Recv Date','Supplier Inv','Status/Photos'];
+  reportTotalsRow=['TOTAL INSTALLS: '+list.length,'','','','','','','','',''];
+  document.getElementById('report-output').innerHTML=tbl(reportColumns,rows,'<td colspan="10">TOTAL INSTALLS: '+list.length+'</td>');
+}
+function repJobProfit(l,from,to){
+  reportTitle=REPORT_TITLES.jobprofit;
+  const sales=l.filter(e=>e.MovementType==='Stock Out'&&e.MovementDate>=from&&e.MovementDate<=to);
+  const jobs={};
+  sales.forEach(e=>{
+    const key=[e.MovementDate,e.CustomerName||'',e.DispatchInvoice||'',e.InstallerName||''].join('||');
+    if(!jobs[key])jobs[key]={date:e.MovementDate,customer:e.CustomerName||'-',invoice:e.DispatchInvoice||'-',installer:e.InstallerName||'-',units:0,cost:0,client:0,charge:0};
+    const j=jobs[key]; j.units++; j.cost+=parseFloat(e.CostPrice||0); j.client+=parseFloat(e.SellingPrice||0);
+    const ic=parseFloat(e.InstallerCharge||0); if(!isNaN(ic))j.charge+=ic;
+  });
+  let tProfit=0,tClient=0,tCost=0,tCharge=0; reportData=[];
+  const rows=Object.values(jobs).sort((a,b)=>String(b.date).localeCompare(String(a.date))).map(j=>{
+    const profit=round2(j.client-j.cost-j.charge);
+    tProfit+=profit;tClient+=j.client;tCost+=j.cost;tCharge+=j.charge;
+    reportData.push({Date:fmtDate(j.date),Customer:j.customer,Invoice:j.invoice,Installer:j.installer,Meters:j.units,ClientValue:round2(j.client),CostValue:round2(j.cost),InstallerCost:round2(j.charge),Profit:profit});
+    return '<tr><td>'+fmtDate(j.date)+'</td><td>'+esc(j.customer)+'</td><td class="mono">'+esc(j.invoice)+'</td><td>'+esc(j.installer)+'</td><td class="mono">'+j.units+'</td><td class="mono">'+fmt(j.client)+'</td><td class="mono">'+fmt(j.cost)+'</td><td class="mono">'+fmt(j.charge)+'</td><td class="mono" style="color:'+(profit<0?'var(--red)':'var(--green)')+'">'+fmt(profit)+'</td></tr>';
+  });
+  reportColumns=['Date','Customer','Client Inv','Installer','Meters','Client Total','Cost Total','Installer Charge','Profit'];
+  reportTotalsRow=['TOTALS','','','','',fmt(tClient),fmt(tCost),fmt(tCharge),fmt(tProfit)];
+  document.getElementById('report-output').innerHTML=tbl(reportColumns,rows,'<td colspan="5">TOTALS</td><td class="mono">'+fmt(tClient)+'</td><td class="mono">'+fmt(tCost)+'</td><td class="mono">'+fmt(tCharge)+'</td><td class="mono">'+fmt(tProfit)+'</td>');
 }
 function repMeterDetail(){
   reportTitle=REPORT_TITLES.meterdetail;reportData=[];
@@ -1077,8 +1431,9 @@ function generateReportPDF(){
   if(currentReport==='installed'){const f=document.getElementById('report-installer').value.trim();if(f)doc.text('Installer: '+f,pageW-14,23,{align:'right'});}
   doc.setDrawColor(61,125,196);doc.setLineWidth(0.6);doc.line(14,32,pageW-14,32);
   const cols=reportColumns||Object.keys(reportData[0]);const dk=Object.keys(reportData[0]);
-  const money=dk.filter(c=>/Price|Value|Cost|Sell|Profit/i.test(c));
-  const body=reportData.map(r=>dk.map(c=>money.includes(c)?fmt(r[c]):String(r[c]==null?'':r[c])));
+  const dkUse=dk.slice(0,cols.length);
+  const money=dkUse.filter(c=>/Price|Value|Cost|Sell|Profit/i.test(c));
+  const body=reportData.map(r=>dkUse.map(c=>money.includes(c)?fmt(r[c]):String(r[c]==null?'':r[c])));
   const foot=reportTotalsRow?[reportTotalsRow]:undefined;
   doc.autoTable({startY:36,head:[cols],body:body,foot:foot,theme:'striped',
     headStyles:{fillColor:[61,125,196],textColor:[255,255,255],fontSize:7.5,fontStyle:'bold'},
@@ -1144,24 +1499,26 @@ document.getElementById('btn-send-installer').addEventListener('click',async()=>
   const customer=document.getElementById('out-customer').value.trim();
   const address=document.getElementById('out-address').value.trim();
   const clientInv=document.getElementById('out-invoice').value.trim();
-  const ref=document.getElementById('out-ref').value.trim();
   const installerName=document.getElementById('out-installer').value.trim();
-  if(!customer||!address||!clientInv||!ref||!installerName){toast('Fill customer, address, invoice, ref and installer','error');return;}
+  if(!customer||!address||!clientInv||!installerName){toast('Fill customer, address, invoice and installer','error');return;}
   const inst=installers.find(i=>i.Name===installerName);
   if(!inst){toast('Select a valid installer','error');return;}
   if(!inst.Email){toast('This installer has no email address. Add it in Settings.','error');return;}
+  const ref='';
+  const list=installBasket.slice();
   showLoader(true);
   try{
-    const r=await callBackend({action:'sendInstallerLink',meters:installBasket.map(m=>m.MeterNumber),
+    const r=await callBackend({action:'sendInstallerLink',meters:list.map(m=>m.MeterNumber),
       customer:customer,address:address,clientInvoice:clientInv,reference:ref,
       installerName:inst.Name,installerEmail:inst.Email,installerMobile:inst.Mobile,createdBy:currentUser});
     if(r.ok){
-      // reflect locally: meters become Sent for Install
-      installBasket.forEach(bm=>{const m=meters.find(x=>x.MeterNumber===bm.MeterNumber);if(m){m.Status='Sent for Install';m.CustomerName=customer;m.InstallAddress=address;m.DispatchInvoice=clientInv;m.Reference=ref;m.InstallerName=inst.Name;m.InstallerMobile=inst.Mobile;}});
-      toast('Link emailed to '+inst.Name,'success');
-      installBasket=[]; resetScanScreen();
-    }else toast(r.error||'Could not send','error');
-  }catch(e){toast('Connection error: '+e.message,'error');}finally{showLoader(false);}
+      list.forEach(bm=>{const m=meters.find(x=>x.MeterNumber===bm.MeterNumber);if(m){m.Status='Sent for Install';m.CustomerName=customer;m.InstallAddress=address;m.DispatchInvoice=clientInv;m.Reference=ref;m.InstallerName=inst.Name;m.InstallerMobile=inst.Mobile;}});
+      showLoader(false);
+      generateInstallRequestPDF(list,customer,address,clientInv,inst,r.url||'');
+      toast('Link emailed to '+inst.Name+' \u2014 request form downloaded','success');
+      installBasket=[]; jobPrices={}; resetScanScreen();
+    }else{showLoader(false);toast(r.error||'Could not send','error');}
+  }catch(e){showLoader(false);toast('Connection error: '+e.message,'error');}
 });
 
 // ---- MODAL ----
